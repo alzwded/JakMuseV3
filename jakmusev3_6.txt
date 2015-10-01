@@ -1,0 +1,705 @@
+=============================================================
+Blocks
+=============================================================
+
+PA
+==
+
+        +-------+
+        |  PA   |
+        |       |
+    F-/-|   phi-|-/-phi
+        |       |
+        +_______+
+            |
+            CLK
+
+pos(CLK)
+    phi = phi + F
+
+WT interface
+============
+
+               +------------+
+         |M|=/=|    WT      |
+         off-/-|            |
+           N-/-|            |-/-value
+          in-/-|            |
+               +------------+
+
+WT#truncate
+===========
+
+               +------------+
+         |M|=/=|    WT#t    |
+         off-/-|            |
+           N-/-|            |-/-value
+          in-/-|            |
+               +------------+
+
+always
+    value = M[off + floor(N * in/MAX_WORD)] # add white noise in low W+1 bits
+
+WT#linear
+=========
+
+               +------------+
+         |M|=/=|    WT#l    |
+         off-/-|            |
+           N-/-|            |-/-value
+          in-/-|            |
+               +------------+
+
+always
+    // assumes 0=<in<=N-1 ; for N > in > N-1 we have a corner case where we need to wrap around
+    $1 = N * in/MAX_WORD
+    // assumes for N*in % MAX_WORD != 0
+    $2 = floor($1)
+    $3 = ceil($1)
+    // assumes $1 < $2 < $3
+    value = ($1 - $2) * M[off + $2] + ($3 - $1) * M[off + $3]
+
+WT#cospline
+===========
+
+               +------------+
+         |M|=/=|    WT#c    |
+         off-/-|            |
+           N-/-|            |-/-value
+          in-/-|            |
+               +------------+
+
+always
+    // assumes 0=<in<=N-1 ; for N > in > N-1 we have a corner case where we need to wrap around
+    $1 = N * in/MAX_WORD
+    // assumes for N*in % MAX_WORD != 0
+    $2 = floor($1)
+    $3 = ceil($1)
+    $4 = $1 - $2;
+    $5 = (1 - cos($4 * PI)/2
+    value = M[off + N * $2] * (1 - $5) + M[off + N * $3] * $5 
+
+input#Generator
+===============
+
+On strobe ENE, takes 2 cycles (embedded PA, internal operation)
+
+
+                +-----------------------------------+
+                |         Gen                       |
+                |                   +----+          |
+   {MEM,off,N}==|===================| WT |-/-+      |
+                |    +----+     +-/-|-idx|   |      |
+                |    | PA |     |   +----+   |      |
+                |    |phi-|-/---+            |      |
+            F-/-|-+--|-F  |                  |      |
+                | |  | CLK|                  |      |
+                | |  +----+          +-----[OP]-----|-/-Y
+                | |     |            |       |      |
+                | +-----------+      |       |      |
+                |       |     |      |       |      |
+      TGlide--/-|------------|?>--NGlide     |      |
+                |       |     |              |      |
+                |       +-----+-----+-[z^-1]-+      |
+                |                   |               |
+                +-----------------------------------+
+                                    |
+                                    ENE
+
+pos(ENE)
+#0
+    $newF = 0
+    foreach(i : connections)
+        $newF += i.value
+    if($newF != F && !NGlide)
+        NGlide = TGlide
+    if NGlide
+        F = F + ($newF - F) / NGlide
+        NGlide = NGlide - 1
+    else
+        F = $newF
+    strobe PA.CLK
+#1
+    $1 = PA.phi
+    Y = WT($1)
+
+ADSR_ENGINE
+===========
+
+            +-------------------------+
+            |    ADSR_ENGINE          |
+        A-/-|                         |
+        D-/-|      =X0                |
+        S-/-|      =state             |-/-Y
+        R-/-|      =ADSR_counter      |
+      RST---|                         |
+        X-/-|                         |
+            |                         |
+            +-------------------------+
+                        |
+                        ENE
+
+pos(ENE)
+    if(X0 != X)
+        if(X0 && !X)
+            state = 'R'
+        elif(state == 'R')
+            state = 'A'
+            ADSR_counter = A * (ADSR_counter/R)
+            X0 = X
+        elif(!X0 && X)
+            ADSR_counter = 0
+            state = 'A'
+            X0 = X
+        elif(ResetADSR)
+            ADSR_counter = 0
+            state = 'A'
+            X0 = X
+        elif(state == 'A')
+            X0 = X
+        elif(state == 'D')
+            ADSR_counter = A * (ADSR_counter/D)
+            X0 = X
+        else
+            X0 = X
+    else
+        ADSR_counter++
+
+    if(state == 'A')
+        if(ADSR_counter > A)
+            ADSR_counter = 0
+            state = 'D'
+        else
+            Y = ADSR_counter/A * X
+    if(state == 'D')
+        if(ADSR_counter > D)
+            ADSR_counter = 0
+            state = 'S'
+        else
+            Y = (S + (1-S)(1 - ADSR_counter/D)) * X
+    if(state == 'S')
+        Y = S * X
+    if(state == 'R')
+        if(ADSR_counter > R)
+            ADSR_counter = 0
+            state = '-'
+            X0 = 0
+        else
+            Y = (1 - ADSR_counter/R) * S * X
+    if(state == '-')
+        Y = 0
+    
+input#filter
+============
+
+                        +-----------------------------------------+
+                        |         input#filter                    |
+                        |                                         |
+                        |             +------------+              |
+                        |             |ADSR_ENGINE |              |
+{A,D,S,R,RST}===========|=============|           Y|---[*]--------|-/-value
+                        |             |            |    |         |
+{inputs}========[SUM]-/-|-[LO]-[HI]-/-|X      ENE  |    |         |
+|(ENE)                  | |    |      +-------|----+    |         |
+|                LoF--/-|-+    |              |         |         |
+|                HiF--/-|------+              |         |         |
+|                  K--/-|-------------------------------+         |
+|                       |                     |                   |
+|                       |                   [z^-1]                |
+|                       |                     |                   |
++-----------------------|-SCLK----------------+----+              |
+                        |                          |              |
+                        +--------------------------|--------------+
+                                                   |
+                                                   ENE
+
+TCh::pos(ENE)
+#0
+  strobe inputs
+#2
+  X0l = ApplyLowPassFilter(X, X0l, LowPassFilterFreq)
+  X0b = ApplyHighPassFilter(X0l, X0b, HighPassFilterFreq)
+  strobe ADSR_ENGINE
+
+TCh::always
+  Y = K * Y0
+
+input#const
+===========
+
+        +------------+
+        |  I#const   |
+        |   C--------|-/-value
+        |      CLK   |
+        +------|-----|
+               |
+               CLK
+
+input#input
+===========
+
+
+            +---------------------+
+            |   I#input           |
+      [M]=/=|                     |
+      off-/-|       =idx          |-/-value
+        N-/-|                     |
+      RST---|                     |
+            |                     |
+            |           ENE       |
+            +---------------------+
+                        |
+                        ENE
+
+always
+    value = M[off + idx]
+
+pos(CLK)
+    idx = (RST) ? 0 : ((idx + 1)%N)
+
+input#noise
+===========
+
+                +-----------------------------------+
+                |              I#noise              |
+                |                                   |
+                |              [Reg]----------------|-/-N
+                |                |                  |
+        type--/-|--|?poly>-----(OP)--+              |
+                |                |   |              |
+                |  +------------[<]  |              |
+                |  |             |   |              |
+            K-/-|--+->%[counter]-+   |              |
+                |      (+1)          |              |
+                |       ^            |              |
+                |       |            |              |
+                |       +------------+              |
+                |       |                           |
+                +-----------------------------------+
+                        |
+                        ENE
+
+pos(ENE)
+    if(counter == 0)
+        reg = (reg >> 1) ^ ((reg & 1) * poly[type]);
+    counter = (counter + 1) % K
+
+pos(RST)
+    counter = 0
+    reg = 0xA001
+
+always
+    N = reg
+
+output
+======
+
+                    +------------------------------+
+                    |   Output                     |
+                    |                              |
+  {inputs}==[SUM]-/-|------------------------------|-/-sample
+  |(ENE)            |                              |
+  |                 |                              |
+  |                 |                              |
+  |                 |                              |
+  +-----------------|-SCLK-----------------+       |
+                    |                      CLK     |
+                    +----------------------|-------+
+                                           |
+                                           CLK
+
+always
+    // assumes PCM in signed 16bit mode
+    sample = map { word => int16_t }(input)
+
+=============================================================
+Abstract
+=============================================================
+
+class Output
+{
+input:
+    word X;
+output:
+    SampleType_t sample;
+action:
+    void CLK();
+}
+
+class PA
+{
+input:
+    word F;
+output:
+    word phi;
+registers:
+    word phi;
+action:
+    void CLK();
+}
+
+interface WT
+{
+input:
+    RAM MEM;
+    word off, N, in;
+output:
+    value;
+}
+
+instance WT#trunc
+instance WT#linear
+instance WT#cosine
+
+class ADSR_ENGINE
+{
+input:
+    word A, D, S, R;
+    word X;
+internal:
+    word X0, state, ADSR_counter;
+output:
+    word Y;
+action:
+    void ENE();
+    void RST();
+}
+
+interface IInput
+{
+output:
+    word value;
+action:
+    void ENE();
+    void RST();
+}
+
+class IInput#Filter {
+input:
+  word X aka IInput[] connections;
+  word A,D,S,R;
+  bool ResetADSR;
+  word LowPassFilterFreq;
+  word HighPassFilterFreq;
+  word K;
+output:
+  word Y;
+state:
+  word Y0;
+  word X0l, X0b;
+internal:
+  ADSR_ENGINE{A:A, D:D, S:S, R:R, RST:RST, X:X0b, Y:Y0};
+action:
+  void ENE();
+  void RST();
+}
+
+class IInput#Generator
+{
+input:
+    word F;
+    RAM MEM;
+    word off, N;
+    word TGlide;
+internal:
+    word NGlide;
+    PA{F:F, phi:WT.idx};
+    WT{MEM:MEM, off:off, N:N, idx:PA.phi, value:Y};
+output:
+    word Y;
+action:
+    void ENE();
+    void RST();
+}
+
+class IInput#Const
+{
+rom:
+    word C;
+output:
+    word value;
+action:
+    void ENE();
+    void RST();
+}
+
+class IInput#Input
+{
+input:
+    RAM MEM;
+    word off, N;
+output:
+    word value;
+    bool RST;
+action:
+    void ENE();
+}
+
+class IInput#Noise
+{
+input:
+    word K;
+    word type;
+output:
+    word N;
+internal:
+    word Reg = 0xA001;
+    word poly[] = { 0x8255, 0xA801 };
+    word counter;
+action:
+    void ENE();
+    void RST();
+}
+
+==============================================================
+Note reset sketch
+==============================================================
+
+I -> G -> F -> F ------> O
+            /          |
+k -> G -> F           /
+                     /
+k -> G -> F -> G -> F
+            /
+           I
+
+line1: square -> scale + adsr -> tremolo + scale + filter (1)
+line2: LFO -> scale           -> tremolo + scale + filter (1)
+line3: LFO -> scale -> vibrato sine -> scale + adsr + filter (2)
+line4: input to vibrato sine        -> scale + adsr + filter (2)
+
+result: {tremolo square (line 1) + adsr + LFO + filtered + scaled down}
+  mixed with {vibrato sine on LFO + filtered + adsr + scaled down}
+
+input: 
+#<BEGIN FILE>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SECTION INSTANCES
+# O is global output
+# declares instances of generators, filters, inputs, etc
+# this sets their parameters
+    F1 = new Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4}
+    F2 = new Filter{A=100,D=100,S=0.5,R=100,ResetADSR=0,Low=22050,High=300,K=0.8}
+    WT1 = new WaveTable{Interpolation=Truncate,Data=[1,-1]}
+    G1 = new Generator{WT=WT1,Glide=1}
+    I1 = new Input{}
+    F3 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.02}
+    WT2 = new WaveTable{Interpolation=Cosine,Data=[0,1,0,-1]}
+    G2 = new Generator{WT=WT2,Glide=0}
+    F4 = new Filter{A=100,D=100,S=0.8,R=30,Low=22050,High=1,K=0.3}
+    G3 = new Generator{WT=WT2,Glide=1}
+    I2 = new Input{}
+    F5 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.01}
+    G4 = new Generator{WT=WT2,Glide=0}
+    K1 = new Constant{Value=5}
+    K2 = new Constant{Value=20}
+    N0 = new Noise{Type=0}
+END SECTION
+
+SECTION INPUT CONNECTIONS
+    # determines the input connections;
+    # in the form of Parent[Input1, Input1...]
+    # inputs are atan(sum(inputs))
+        O[F1,F4] F1[F2,F3] F2[G1]    G1[I1]
+                           F3[G2]    G2[K1]
+                 F4[G3]    G3[F5,I2] F5[G4] G4[K2]
+END SECTION
+                 
+SECTION RESET BUS
+    # connects the note reset signals;
+    # in the form of Input[Block1, Block2, ...]
+    # generators can start triggering their glide or reset the phase
+    # filters can reset their adsr counters
+    I1[G1,F2,F1,G2]
+    I2[G3,F4,G4]
+END SECTION
+
+SECTION NOTES
+    I1 NOTES {Divisor=64, Notes=[16C4, 16D4, 16E4, 16G4, 64C5]}
+    I3, PCM {Interpolation=Cosine, Stride=10,
+        Samples=[0, 4, 7, 9, 10, 9, 7, 4, 0, -4, -7, -9, -10, -9, -7, -4]
+    }
+END SECTION
+#<END FILE>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+syntax of file:
+COMMENT : '#' ".*" EOL ;
+WHITESPACE : [ \t\n,]* ;
+COMMA : ',' ;
+STRING : [a-zA-Z_][a-zA-Z0-9]* ;
+NUMBER : // TODO valid float representation regex lol
+       | '^-?((([0-9]+(\.([0-9]*)?)?))|([0-9]*\.[0-9]+))$' // simpler, works for base 10
+       ;
+file : section_list ;
+section_list : section_list section | ;
+section : instance_section | connection_section | reset_section | notes_section ;
+instance_section : 'SECTION' 'INSTANCES' instance_declarations 'END' 'SECTION'
+instance_declarations : instance_declarations instance | ;
+instance : 'new' STRING<type> param_list ;
+param_list : '{' params '}' ;
+params : params ',' param | ;
+param : STRING<key> '=' value ;
+value : NUMBER | STRING | array ;
+array : '[' values ']' ;
+values : values ',' value | values value | ;
+connection_section : 'SECTION' 'INPUT' 'CONNECTIONS' connection_declarations 'END' 'SECTION' ;
+connection_declarations : connection_declarations connection | ;
+connection : STRING<block> array<inputs> ;
+reset_section : 'SECTION' 'RESET' 'BUS' reset_declarations 'END' 'SECTION' ;
+reset_declarations : reset_declarations reset | ;
+reset : STRING<inputBlock> array<receivingBlocks> ;
+notes_section : 'SECTION' 'NOTES' score 'END' 'SECTION' ;
+score : STRING<inputBlock> STRING<type> params ;
+
+comments are ignored
+whitespace delimits tokens;
+token delimiters:
+    WHITESPACE, COMMA, '{', '}', '[', ']', '='
+
+--------------------------------------------------------------
+Paramters
+--------------------------------------------------------------
+    name        default     notes
+
+:Filter:
+    A           0           attack time
+    D           0           decay time
+    S           0.5         sustain level
+    R           0           release time
+    ResetADSR   1           resets counter on note change if in S
+    Low         22050       low pass filter cut off frequency
+    High        1           high pass filter cut off frequency
+    K           0.5         gain factor
+    InvertADSR  0           invert envelope (A->D, D->A, R->A2)
+    [INPUT]     X=0         sample to operate upon
+
+:Generator:
+    WT          [0]         looping wave table
+    Glide       0           number of time steps blend frequencies
+    [INPUT]     F=1         signal frequency set to F Hz
+
+:Input:
+
+:Input#NOTES:
+    Scale       1           divide 44100/Scale and 1 time sample
+                            is kept for that many time steps
+    Notes       [1-]        Notes in the form of
+                              <length><A-H><#|b><octave>    4F#2
+                              <length>-     shuts up whatever is connected
+                                            to this input
+
+:Input#PCM:
+    Scale       1           two samples are considered to represent
+                            44100/Scale time steps; intermediate
+                            time steps are interpolated between the two
+    Interpolation Trunc     Interpolation method;
+                            can be Trunc, Cosine, Linear
+    Samples     [0]         PCM samples
+
+:Constant:
+    Value       0           arbitrary number
+    [INPUT]     -           ignored
+
+:Noise:
+    Type        0           0 or 1 (polynomial coefficients to use for the noise generator)
+    [INPUT]     K=1         delay factor (keep a sample for K time steps)
+
+
+==============================================================
+TODO
+==============================================================
+
+ADSR reset: DONE leaving note here for future note. note. NOTE NOTE NOTE
+Need a note-reset bus line. It's up to the set up to make sure he don't have two+ note-input reset-emitting blocks on the same line.
+
+==============================================================
+UI
+==============================================================
+
+1 |2|3|4| N ...                                                            |
+
+I1 N 32 |4C4    |xxxxxxx|xxxxxxx|xxxxxxx|1D4    |2E4    |xxxxxxx|1-     |4C4
+I2 N 64 |2C4|xxx|2E4|xxx|4G4|xxx|xxx|xxx|8G4|xxx|xxx|xxx|xxx|xxx|xxx|xxx|8C4
+I3 P 64T|10 |11 |10 |0  |0  |0  |10 |11 |10 |0
+
+
+col1: Input ID      (8)
+col2: Combo: NOTES or PCM (1)
+col3: Scale (3)
+col4: (for PCM) interpolation method (1)
+colN: N>4, (N-4)*T + col1-4 pixels fit the window: data
+
+      T = B * (I[i].scale / GCD(I[*]))
+      B = wide enough to fit in 7 ASCII characters + one pipe
+      '|dddN#dd' e.g. '|  4C  4' ; '|128F# 2'
+
+      color: alternate snow white and light yellow for notes
+             gray for breaks
+             alternate light blue and light blue-green for PCM data
+
+
+window width target: 80
+
+8 + 1 + 3 + 1 + X = 80
+16 + X = 80
+X = 64
+64/8 = 8
+
+say.. 120
+X = 104
+104/8 = 13 bars (better!)
+
+13 + 104 = 117 columns
+117 * 10 = 1170 pixels (whoa!)
+
+13 + 10 * 8 = 93
+93 * 10 = 930 pixels
+
+13 + 8 * 8 = 77
+77 * 10 = 770 pixels
+
+ ___________________________________________________________
+|-|_______________________________________________________|+|
+|                                                           |
+|I0     N 32 |1C4    |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|            |       |       |       |       |       |      |
+|___________________________________________________________|
+|__I__________Length_=~_30s_______Position_=_1-6/32_(0%)____|
+
+Height: 10 staves * 20 = 200 pixels
+      + status bar  20 = 220 pixels
+      + name (comment) 20 = 240 pixels
+
+
+
+Controls:
+  mouse:
+    left click:     select cell (selected cell has inverted colours)
+    middle click:   yank
+    right click:    select range
+    scroll:         scroll
+  keyboard:
+    insert:         insert blank bar
+    shift-insert:   paste selection
+    delete:         cut selection
+    shift-delete:   cut selection
+    ctrl-delete:    delete selection without modifying cut buffer
+    ctrl-insert:    copy selection
+    tab:            change insert mode (Insert/Append/Replace)
+    arrows:         move around
+    shift-arrows:   select
+    ctrl-arrows:    scroll
+    pgup/pgdwn:     scroll
+    shift-pgud:     select+scroll
+    [-A-Z0-9#bTNtlc]:   type into first active cell of selection,
+                        wiping contents of selection
+    F2:             save file
+    F3:             load file
