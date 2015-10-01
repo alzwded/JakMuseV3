@@ -20,21 +20,26 @@ int windowW, windowH, window;
 #define GLYPH_H (152.38f)
 #define COLUMNS (77)
 #define ROWS (12)
+#ifdef WEIRD_WINDOWS
 #define CANVAS_W (GLYPH_W * (COLUMNS + 1))
 #define CANVAS_H (GLYPH_H * (ROWS + 1))
 const float OFFSET_X = GLYPH_W/2.f;
 const float OFFSET_Y = GLYPH_H/2.f;
+#else
+#define CANVAS_W (GLYPH_W * (COLUMNS))
+#define CANVAS_H (GLYPH_H * (ROWS))
+const float OFFSET_X = 0.f;
+const float OFFSET_Y = 0.f;
+#endif
 
-enum class color_t {
-    BLACK,      // pipe characters between columns; scale factor
-    WHITE,      // alternating with yellow in table for NOTES; channel name; interpolation
-    YELLOW,     // alternating with white in table for NOTES
-    SKY,        // alternating with sea in table for PCM
-    SEA,        // alternating with sky in table for pcm
-    BLUE,       // status bar, selection, title
-    GOLD,       // active cell
-    GRAY        // rests
-};
+#include <string>
+#include <list>
+#include <tuple>
+
+#include "document.h"
+#include "common.h"
+
+
 
 static void handleResize(int w, int h)
 {
