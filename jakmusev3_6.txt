@@ -611,6 +611,21 @@ TODO
 ADSR reset: DONE leaving note here for future note. note. NOTE NOTE NOTE
 Need a note-reset bus line. It's up to the set up to make sure he don't have two+ note-input reset-emitting blocks on the same line.
 
+Display:
+
+ICell has TL coordinates, FieldWidth, IsSelected
+everything else stays the same
+on update: wipe list
+           ask list of cells
+           draw them
+           keep them
+           on key up: 
+               query cell do see if it makes sense
+
+delete on staff header: delete everything
+
+Document provides list of cells to be drawn
+
 ==============================================================
 UI
 ==============================================================

@@ -77,7 +77,7 @@ public:
     ICell* Up();
     ICell* Down();
     ICell* Left();
-    ICell* Right();
+    ICell* Right() { return right_; }
     size_t FieldSize();
     std::string Text();
     color_t Color() =0;
@@ -89,6 +89,10 @@ public:
 private:
     Staff& staff_;
 };
+
+// ===========================================================
+// Cell
+// ===========================================================
 
 class NoteCell : public ICell
 {
