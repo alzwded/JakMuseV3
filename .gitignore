@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+*.pdb
+*.obj
+*.ilk
+
+freeglut
