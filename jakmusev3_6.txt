@@ -718,3 +718,133 @@ Controls:
                         wiping contents of selection
     F2:             save file
     F3:             load file
+
+new display design and whatnot
+------------------------------
+
+ICell is okay. We don't have a problem with ICell. Title and StaffHeader is okay. Edited text is okay.
+
+new note representation: collapsed piano roll:
+imagine 32 blocks
+. is WHITE, ' is YELLOW
+        f.......g'''''''h...D'''C.......
+        ^
+        active
+
+active is coloured BLUE
+on key = right => active will move to g''''''' and colour that one BLUE
+
+edited text will be 8F#3 ; if moved: 8G3; 4H3; 4D4; 8C4
+
+can be scrolled, in which case
+        .fg'''''''h...D'''C.......x'''''
+
+note name is shown to the rightmost side and truncated
+
+internal storage:
+    per staff:
+        std::vector<Note> notes (1..N)
+        std::vector<int>  blocks (1..Sum{1, N, Note.Length})
+        where each entry is the note index represented in this cell
+        scrolling works better now
+        active cell will be the head of the current note
+        move right: keep moving right until blocks[init] != blocks[i]
+        edited text is notes[blocks[current]].text
+
+so:
+    document:
+        vector<Staff>
+        title
+
+    staff:
+        name
+        type
+        scale
+        
+        vector<Notes>
+
+
+
+
+how to render notes:
+height:
+    10 * 3 pixels for scale
+    12 * 3 pixels for note
+    ======
+    66 pixels / staff
+
+    12 * 66 = 792 pixels for entire screen
+
+width:
+    2 pixels per note; 512 notes on screen => 1024 pixels + 10 * (8 + 1 + 3 + 1) pixels full width = 1154 pixels width
+    guideline: use 12 for quarter note, 48 for full note
+    => 21 full notes / measures on screen
+
+    assuming staffs have different scaling and require rescaling...
+
+    maybe increase width to 3 pixels / note, 298 notes on screen => 1023 pixels + 1090 pixels full width
+    6 measures on screen for 12 for quarter note, 48 for full note
+    for some reason using 96 for full note, we end up with 3 measures on sceen, which is still okay
+
+one virtual pixel is 3x3 pixels
+
+
+
+even better idea: keep it as is, but in a 23/12 box:
+first 8 pixels x 3 : number of scale (0-9)
+blank line
+3 pixels: + or L (# or b)
+blank line
+last 10 pixels x 3 : letter for note (A,b,C,d,E,F,G,H)
+white notes: 1-4 number, 5-8 clear, 9 blank, 10-12 +/L, 13 blank, 14-18 letter, 19-23 clear
+yellow notes: 1-4 clear, 5-8 number, 9 blank, 10-12 +/L, 13 blank, 14-18 clear, 19-23 letter
+
+font:
+
+... ''' ... ''' ... ''' ... '''
+ X  XX   XX XX  XXX XXX  XX X X
+X X X X X   X X X   X   X X X X
+XXX XX  X   X X XX  XX   XX XXX
+X X X X X   X X X   X     X X X
+X X XX   XX XX  XXX X   XX  X X
+
+... ''' ... ''' ... ''' ... '''
+XXX   X X   X   X X XX   X  XXX
+ X    X X X X   XXX X X X X X X
+ X    X XX  X   X X X X X X XX 
+ X    X X X X   X X X X X X X  
+XXX XX  X X XXX X X X X  X  X  
+
+... ''' ... ''' ... ''' ... '''
+XXX XXX XXX XXX X X X X XX  X X
+X X X X X    X  X X X X   X  X 
+ XX XX  XXX  X  X X X X XXX  X 
+  X X X   X  X  X X X X   X  X 
+  X X X XXX  X  XXX  X  XX  X X
+
+... '''
+X X XXX
+X X   X
+ X  XXX
+ X  X  
+ X  XXX
+
+ X   X  XX  XXX X X XXX  XX XXX X X  X 
+X X XX    X  X  X X X   X     X  X  X X
+X X  X   X    X XXX  X  X X   X X X   X
+ X  XXX XXX XX    X X    X   X   X  XX 
+
+0 1  
+ 0 0 
++  L 
+A B  
+ C E 
+
+all that fits into one 23/12 block :D
+
+so I keep 77 blocks which contain 77 * 4 = 308 ticks;
+for notes which are 12 ticks, full note 48, 308/48 = 6 measures GENIUS
+length: encoded in number of ticks
+scale: pixels 1-8/4
+sharp: pixels 9-13
+note:  pixels 14-23/5
