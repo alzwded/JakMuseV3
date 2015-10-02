@@ -12,10 +12,9 @@ public:
     size_t FieldSize() =0; // get the field's size for rendering
     std::string Text() =0; // get the text for rendering
     color_t Color() =0;
-    void Backspace() =0; // attempt to backspace
     void Type(char) =0; // attempt to type in a character
     bool AllowsSelect() =0; // headers on the right don't allow select
-    void Mark() =0; // selects this cell
+    std::pair<size_t, size_t> Location() =0;
 };
 
 #endif

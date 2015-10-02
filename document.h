@@ -39,18 +39,36 @@ public:
     void Copy();
     void Cut();
     void Paste();
-    ICell* ScreenHead(); // returns the active cell; will render around it
     void SetInsertMode(InsertMode_t);
+
     std::tuple<int, int, int> Position();
     int Duration();
-    void ScrollLeft();
-    void ScrollRight();
+    std::string EditedText();
+
+    void ScrollLeft(bool select, bool byPage);
+    void ScrollRight(bool select, bool byPage);
+    void MoveUp(bool select);
+    void MoveDown(bool select);
+    void MoveLeft(bool select);
+    void MoveRight(bool select);
+    void Type(char);
 
     void Open(std::istream&);
     void Save(std::ostream&);
 
+    std::list<ICell*> const& Cells() { return cells_; }
+
 private:
+    void InitCells();
+    void Scroll(size_t col);
+
+private:
+    std::string title_;
     std::list<Staff> staves_;
+    std::list<ICell*> cells_;
+    size_t activeRow_, activeCol_;
+    std::list<std::list<Note>::iterator> activeNotes_;
+    size_t scroll_;
 };
 
 #endif
