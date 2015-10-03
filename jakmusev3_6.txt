@@ -718,6 +718,7 @@ Controls:
                         wiping contents of selection
     F2:             save file
     F3:             load file
+    F12:            toggle notename notation / graphical notation
 
 new display design and whatnot
 ------------------------------
