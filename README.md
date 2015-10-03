@@ -32,3 +32,4 @@ Roadmap
   + clock...
 - documentation (convert specs to docs)
 - modify "static" parameters to also be connectable to input sources (filter frequencies, gain, ADSR); or just do this from the get-go
+- linux support (i.e. Makefile + ifdef away windows specific stuff)
