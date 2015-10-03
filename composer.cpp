@@ -12,13 +12,18 @@
 #endif
 #include <windows.h>
 #include <ShellScalingApi.h>
+#include <assert.h>
 
 int windowW, windowH, window;
 //#define CANVAS_W (8066.52f)
 //#define CANVAS_H (1828.56f)
-#define GLYPH_W (104.76f)
-#define GLYPH_H (152.38f)
-#define COLUMNS (77)
+#define GLYPH_W_REAL (104.76f)
+#define GLYPH_H_REAL (152.38f)
+#define GLYPH_W (GLYPH_W_REAL * 4.f)
+#define GLYPH_H (GLYPH_H_REAL * 4.f)
+#define GLYPH_BASELINE (119.05f * 4.f)
+//#define COLUMNS (77)
+#define COLUMNS (61)
 #define ROWS (12)
 #ifdef WEIRD_WINDOWS
 #define CANVAS_W (GLYPH_W * (COLUMNS + 1))
@@ -36,7 +41,7 @@ const float OFFSET_Y = 0.f;
 #include <list>
 #include <tuple>
 
-#include "document.h"
+//#include "document.h"
 #include "common.h"
 
 
@@ -99,7 +104,7 @@ void SetBackgroundColor(color_t c)
         glColor3f(1.f, 1.f, 1.f);
         break;
     case color_t::YELLOW:
-        glColor3f(1.f, 1.f, 0.9f);
+        glColor3f(.9f, .9f, .7f);
         break;
     case color_t::SKY:
         glColor3f(0.9f, 0.95f, 1.f);
@@ -150,7 +155,66 @@ void SetForegroundColor(color_t c)
     }
 }
 
-void DrawCharacter(int i, int j, color_t fg, color_t bg)
+void DrawNote(int i, int j, int offset, color_t bg, bool top, char topNumber, char sharp, char bottomChar)
+{
+    assert(offset >= 0 && offset < 4);
+    float realOffset = 0.25 * offset;
+    float realOffsetPlusOne = 0.25 * (offset + 1);
+    glBegin(GL_QUADS); {
+        SetBackgroundColor(bg);
+        glVertex2f((j + realOffsetPlusOne) * GLYPH_W, i * GLYPH_H + OFFSET_Y);
+        glVertex2f((j + realOffset) * GLYPH_W, i * GLYPH_H + OFFSET_Y);
+        glVertex2f((j + realOffset) * GLYPH_W, (i + 1) * GLYPH_H + OFFSET_Y);
+        glVertex2f((j + realOffsetPlusOne) * GLYPH_W, (i + 1) * GLYPH_H + OFFSET_Y);
+    } glEnd();
+
+#define PIXEL_WIDTH (GLYPH_W/12.f)
+#define PIXEL_HEIGHT (GLYPH_H/24.f)
+#define PIXEL(X, Y) do{ \
+    float x = (X), y = (Y); \
+    glVertex2f(j * GLYPH_W + (x + 1) * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + y * PIXEL_HEIGHT); \
+    glVertex2f(j * GLYPH_W + x * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + y * PIXEL_HEIGHT); \
+    glVertex2f(j * GLYPH_W + x * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + (y + 1) * PIXEL_HEIGHT); \
+    glVertex2f(j * GLYPH_W + (x + 1) * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + (y + 1) * PIXEL_HEIGHT); \
+}while(0)
+
+    SetForegroundColor(bg);
+    float nOff = (top) ? 6.5f : 15.f;
+    glPushMatrix();
+    glLineWidth(0.5);
+    glTranslatef((j + offset * 0.25f) * GLYPH_W, i * GLYPH_H + GLYPH_BASELINE/23.f*4.f + nOff * PIXEL_HEIGHT, 0.f);
+    glScalef(4.f/23.f*6.f, -4.f/23.f*5.f, 0.f);
+    glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, topNumber);
+    glPopMatrix();
+
+
+    nOff = 20.5f;
+    glPushMatrix();
+    glLineWidth(0.5);
+    glTranslatef((j + offset * 0.25f) * GLYPH_W, i * GLYPH_H + GLYPH_BASELINE/23.f*3.f + nOff * PIXEL_HEIGHT, 0.f);
+    glScalef(4.f/23.f*6.f, -4.f/23.f*5.f, 0.f);
+    glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, sharp);
+    glPopMatrix();
+
+
+    nOff = (top) ? 1.f : 9.5f;
+    glPushMatrix();
+    //glLineWidth(0.5);
+    glLineWidth(0.7);
+    glTranslatef((j + offset * 0.25f) * GLYPH_W, i * GLYPH_H + GLYPH_BASELINE/23.f*5.f + nOff * PIXEL_HEIGHT, 0.f);
+    glScalef(4.f/23.f*6.f, -4.f/23.f*6.f, 0.f);
+    glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, bottomChar);
+    glPopMatrix();
+
+    //glPushMatrix();
+    //glLineWidth(0.5);
+    //glTranslatef(j * GLYPH_W, i * GLYPH_H + GLYPH_BASELINE + OFFSET_Y, 0.f);
+    //glScalef(4.f, -4.f, 0.0f);
+    //glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, c);
+    //glPopMatrix();
+}
+
+void DrawCharacter(int i, int j, color_t bg, char c)
 {
     glBegin(GL_QUADS); {
         SetBackgroundColor(bg);
@@ -162,10 +226,10 @@ void DrawCharacter(int i, int j, color_t fg, color_t bg)
 
     glPushMatrix();
     glLineWidth(0.5);
-    glTranslatef(j * GLYPH_W, i * GLYPH_H + 119.05f + OFFSET_Y, 0.f);
-    glScalef(1.f, -1.f, 0.0f);
+    glTranslatef(j * GLYPH_W, i * GLYPH_H + GLYPH_BASELINE + OFFSET_Y, 0.f);
+    glScalef(4.f, -4.f, 0.0f);
     SetForegroundColor(bg);
-    glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, ((i * 77 + j) % 10) + '0');
+    glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, c);
     glPopMatrix();
 }
 
@@ -173,14 +237,14 @@ static void drawSomething()
 {
     // text experiment
     for(int i = 0; i < 12; ++i) {
-        for(int j = 0; j < 77; ++j) {
+        for(int j = 0; j < COLUMNS; ++j) {
         }
     }
 
     for(int i = 0; i < 12; ++i) {
-        for(int j = 0; j < 77; ++j) {
+        for(int j = 0; j < COLUMNS; ++j) {
             color_t f, b;
-            switch(((i * 77 + j) / (j + 1)) % 8)
+            switch(((i * COLUMNS + j) / (j + 1)) % 8)
             {
             case 0: f = b = color_t::WHITE; break;
             case 1: f = b = color_t::BLACK; break;
@@ -191,7 +255,23 @@ static void drawSomething()
             case 6: f = b = color_t::SEA; break;
             case 7: f = b = color_t::GRAY; break;
             }
-            DrawCharacter(i, j, f, b);
+            DrawCharacter(i, j, b, j%10 + '0');
+        }
+    }
+
+    for(int i = 1; i < 11; ++i) {
+        for(int j = 13; j < COLUMNS; ++j) {
+            for(int o = 0; o < 4; ++o) {
+                color_t f, b;
+                switch(o%2)
+                {
+                case 0: f = b = color_t::WHITE; break;
+                case 1: f = b = color_t::YELLOW; break;
+                }
+                static const char sharps[] = { ' ', '#', 'b' };
+
+                DrawNote(i, j, o, b, o%2==0, '1' + (j % 6), sharps[(j+o) % 3], 'A' + (j % 8));
+            }
         }
     }
 }
@@ -221,8 +301,8 @@ int main(int argc, char* argv[])
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA);
-    windowW = 800;
-    windowH = 320;
+    windowW = 1024;
+    windowH = 480;
     glutInitWindowSize(windowW, windowH);
     window = glutCreateWindow("Composer");
 
