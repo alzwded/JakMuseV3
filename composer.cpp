@@ -157,10 +157,21 @@ void SetForegroundColor(color_t c)
     }
 }
 
-void DrawNote(int i, int j, int offset, color_t bg, bool top, char topNumber, char sharp, char bottomChar)
-{
+#define PIXEL_WIDTH (GLYPH_W/12.f)
+#define PIXEL_HEIGHT (GLYPH_H/24.f)
+#define PIXEL(X, Y) do{ \
+    float x = (X), y = (Y); \
+    glVertex2f(j * GLYPH_W + (x + 1) * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + y * PIXEL_HEIGHT); \
+    glVertex2f(j * GLYPH_W + x * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + y * PIXEL_HEIGHT); \
+    glVertex2f(j * GLYPH_W + x * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + (y + 1) * PIXEL_HEIGHT); \
+    glVertex2f(j * GLYPH_W + (x + 1) * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + (y + 1) * PIXEL_HEIGHT); \
+}while(0)
+
 #define K (12.f/4.f)
 #define S (1.f/N)
+
+void DrawGraphical(int i, int j, int offset, color_t bg, int baseHeight, int multHeight)
+{
     assert(offset >= 0 && offset < N);
     float realOffset = S * offset;
     float realOffsetPlusOne = S * (offset + 1);
@@ -172,15 +183,37 @@ void DrawNote(int i, int j, int offset, color_t bg, bool top, char topNumber, ch
         glVertex2f((j + realOffsetPlusOne) * GLYPH_W, (i + 1) * GLYPH_H + OFFSET_Y);
     } glEnd();
 
-#define PIXEL_WIDTH (GLYPH_W/12.f)
-#define PIXEL_HEIGHT (GLYPH_H/24.f)
-#define PIXEL(X, Y) do{ \
-    float x = (X), y = (Y); \
-    glVertex2f(j * GLYPH_W + (x + 1) * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + y * PIXEL_HEIGHT); \
-    glVertex2f(j * GLYPH_W + x * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + y * PIXEL_HEIGHT); \
-    glVertex2f(j * GLYPH_W + x * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + (y + 1) * PIXEL_HEIGHT); \
-    glVertex2f(j * GLYPH_W + (x + 1) * PIXEL_WIDTH, i * GLYPH_H + OFFSET_Y + (y + 1) * PIXEL_HEIGHT); \
-}while(0)
+    glBegin(GL_QUADS); {
+        ++i;
+        SetForegroundColor(bg);
+        glVertex2f((j + realOffsetPlusOne) * GLYPH_W, i * GLYPH_H + OFFSET_Y - baseHeight/12.f * GLYPH_H/12.f*9.f - GLYPH_H/12.f*3.f);
+        glVertex2f((j + realOffset) * GLYPH_W, i * GLYPH_H + OFFSET_Y - baseHeight/12.f * GLYPH_H/12.f*9.f - GLYPH_H/12.f*3.f);
+        glVertex2f((j + realOffset) * GLYPH_W, i * GLYPH_H + OFFSET_Y - (baseHeight+1)/12.f * GLYPH_H/12.f*9.f - GLYPH_H/12.f*3.f);
+        glVertex2f((j + realOffsetPlusOne) * GLYPH_W, i * GLYPH_H + OFFSET_Y - (baseHeight+1)/12.f * GLYPH_H/12.f*9.f - GLYPH_H/12.f*3.f);
+        --i;
+    } glEnd();
+
+    int nOff = 20.5f;
+    glPushMatrix();
+    glLineWidth(0.5);
+    glTranslatef((j + offset * S) * GLYPH_W, i * GLYPH_H + GLYPH_BASELINE/23.f*K + nOff * PIXEL_HEIGHT, 0.f);
+    glScalef(N/23.f*12.f, -N/23.f*5.f, 0.f);
+    glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, multHeight);
+    glPopMatrix();
+}
+
+void DrawNote(int i, int j, int offset, color_t bg, bool top, char topNumber, char sharp, char bottomChar)
+{
+    assert(offset >= 0 && offset < N);
+    float realOffset = S * offset;
+    float realOffsetPlusOne = S * (offset + 1);
+    glBegin(GL_QUADS); {
+        SetBackgroundColor(bg);
+        glVertex2f((j + realOffsetPlusOne) * GLYPH_W, i * GLYPH_H + OFFSET_Y);
+        glVertex2f((j + realOffset) * GLYPH_W, i * GLYPH_H + OFFSET_Y);
+        glVertex2f((j + realOffset) * GLYPH_W, (i + 1) * GLYPH_H + OFFSET_Y);
+        glVertex2f((j + realOffsetPlusOne) * GLYPH_W, (i + 1) * GLYPH_H + OFFSET_Y);
+    } glEnd();
 
     SetForegroundColor(bg);
     float nOff = (top) ? 6.5f : 15.f;
@@ -275,6 +308,21 @@ static void drawSomething()
                 static const char sharps[] = { ' ', '#', 'b' };
 
                 DrawNote(i, j, o, b, (j*(int)N+o)%2==0, '1' + (j % 6), sharps[(j*(int)N+o) % 3], 'A' + (j % 8));
+            }
+        }
+    }
+
+    for(int i = 5; i < 11; ++i) {
+        for(int j = 13; j < COLUMNS; ++j) {
+            for(int o = 0; o < N; ++o) {
+                unsigned n = (j*(int)N+o);
+                color_t f, b;
+                switch(n%2)
+                {
+                case 0: f = b = color_t::WHITE; break;
+                case 1: f = b = color_t::YELLOW; break;
+                }
+                DrawGraphical(i, j, o, b, n%12, (j%6) + '1');
             }
         }
     }
