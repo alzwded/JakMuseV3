@@ -49,7 +49,7 @@ const float OFFSET_Y = 0.f;
 #include "document_display.h"
 
 static Document doc;
-static enum { GFX, TXT } mode_ = TXT;
+static enum { GFX, TXT } mode_ = GFX;
 static std::string currentText;
 static bool modified = false;
 
@@ -161,7 +161,7 @@ void SetBackgroundColor(color_t c)
         glColor3f(1.f, 1.f, 1.f);
         break;
     case color_t::YELLOW:
-        glColor3f(.9f, .9f, .7f);
+        glColor3f(.96f, .96f, .77f);
         break;
     case color_t::SKY:
         glColor3f(0.9f, 0.95f, 1.f);
@@ -173,13 +173,15 @@ void SetBackgroundColor(color_t c)
         glColor3f(0.3f, 0.3f, 1.f);
         break;
     case color_t::GOLD:
-        glColor3f(0.5f, 0.5f, 0.f);
+        // TODO rename CRIMSON to GOLD
+        glColor3f(0.3f, 0.f, 0.f);
         break;
     case color_t::GRAY:
         glColor3f(0.4f, 0.4f, .4f);
         break;
     case color_t::CRIMSON:
-        glColor3f(0.3f, 0.f, 0.f);
+        // TODO rename CRIMSON to GOLD
+        glColor3f(0.5f, 0.5f, 0.f);
         break;
     }
 }
@@ -231,7 +233,7 @@ void SetForegroundColor(color_t c)
 #define K (12.f/4.f)
 #define S (1.f/N)
 
-void DrawGraphical(int i, int j, int offset, color_t bg, int baseHeight, int multHeight)
+void DrawGraphical(int i, int j, int offset, color_t bg, int baseHeight, char multHeight)
 {
     assert(offset >= 0 && offset < N);
     float realOffset = S * offset;
@@ -338,7 +340,7 @@ struct gfx {
 };
 static gfx ToGfx(cell_t c)
 {
-    gfx ret = { 0, c.text[2]-'0' };
+    gfx ret = { 0, c.text[1] };
     switch(c.text[0]) {
     case 'C': ret.base = 0; break;
     case 'D': ret.base = 2; break;
@@ -349,6 +351,7 @@ static gfx ToGfx(cell_t c)
     case 'B': ret.base = 10; break;
     case 'H': ret.base = 11; break;
     case '-': ret.base = -64; ret.mult = ' '; return ret; // XXX
+    default: ret.base = -64; ret.mult = ' '; return ret; // XXX
     }
     switch(c.text[2]) {
     case ' ':
@@ -385,10 +388,12 @@ static void DrawCell(cell_t c)
             switch(mode_) {
                 case GFX: {
                               gfx g = ToGfx(c);
-                              DrawGraphical(c.y, c.x/N, c.x%N, c.color, g.base, g.mult);
+                              if(c.text[4]) DrawGraphical(c.y, c.x/N, c.x%N, c.color, g.base, g.mult);
+                              else DrawGraphical(c.y, c.x/N, c.x%N, c.color, g.base, ' ');
                               break; }
                 case TXT:
-                          DrawNote(c.y, c.x/N, c.x%N, c.color, c.text[3], c.text[1], c.text[2], c.text[0]);
+                          if(c.text[4]) DrawNote(c.y, c.x/N, c.x%N, c.color, c.text[3], c.text[1], c.text[2], c.text[0]);
+                          else DrawNote(c.y, c.x/N, c.x%N, c.color, c.text[3], ' ', ' ', ' ');
                           break;
             };
             break;
@@ -440,9 +445,9 @@ static void drawSomething()
     // satus bar
 #define QUOTEH(X) #X
 #define QUOTE(X) QUOTEH(X)
-#define lenText  54
-    static const int offInsert = COLUMNS - 18;
-    static const int offDuration = COLUMNS - 16;
+#define lenText  57
+    static const int offInsert = COLUMNS - 16;
+    static const int offDuration = COLUMNS - 15;
 #define lenDuration 5
     static const int offPosition = COLUMNS - 9;
     static const int lenPosition = 5 + 1 + 2 + 1;
@@ -451,36 +456,34 @@ static void drawSomething()
     sprintf(text, "%-" QUOTE(lenText) "s", currentText.substr(0, lenText).c_str());
     text[lenText] = '\0';
     for(size_t i = 0; i < lenText; ++i) {
-        DrawCharacter(11, i, (modified) ? color_t::GOLD : color_t::WHITE, text[i]); // currentText
+        DrawCharacter(11, i, (modified) ? color_t::GOLD : color_t::CRIMSON, text[i]); // currentText
     }
-    DrawCharacter(11, lenText, color_t::BLACK, ' '); // blank
 
+    color_t insertcolor = color_t::YELLOW;
     switch(doc.insertMode_) {
     case InsertMode_t::INSERT:
-        DrawCharacter(11, offInsert, color_t::WHITE, 'I');
+        DrawCharacter(11, offInsert, insertcolor, 'I');
         break;
     case InsertMode_t::APPEND:
-        DrawCharacter(11, offInsert, color_t::WHITE, 'A');
+        DrawCharacter(11, offInsert, insertcolor, 'A');
         break;
     case InsertMode_t::REPLACE:
-        DrawCharacter(11, offInsert, color_t::WHITE, 'R');
+        DrawCharacter(11, offInsert, insertcolor, 'R');
     }
-    DrawCharacter(11, offInsert + 1, color_t::BLACK, ' ');
 
     char duration[lenDuration + 1];
     sprintf(duration, "%" QUOTE(lenDuration) "u", doc.Duration()%100000);
     duration[lenDuration] = '\0';
     for(size_t i = 0; i < lenDuration; ++i) {
-        DrawCharacter(11, i + offDuration, color_t::WHITE, duration[i]);
+        DrawCharacter(11, i + offDuration, color_t::CRIMSON, duration[i]);
     }
-    DrawCharacter(11, offDuration + lenDuration, color_t::WHITE, 's');
-    DrawCharacter(11, offDuration + lenDuration + 1, color_t::BLACK, ' ');
+    DrawCharacter(11, offDuration + lenDuration, color_t::CRIMSON, 's');
 
     char position[lenPosition + 1];
-    sprintf(position, "%5u %2u%%", doc.Position() % 100000, doc.Percentage() % 100);
+    sprintf(position, "%5u/%2u%%", doc.Position() % 100000, doc.Percentage() % 100);
     position[lenPosition] = '\0';
     for(size_t i = 0; i < lenPosition; ++i) {
-        DrawCharacter(11, offPosition + i, color_t::WHITE, position[i]);
+        DrawCharacter(11, offPosition + i, insertcolor, position[i]);
     }
     //DrawCharacter(11, offPosition + lenPosition - 1, color_t::WHITE, '%');
 }

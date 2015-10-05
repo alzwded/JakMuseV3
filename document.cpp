@@ -19,6 +19,7 @@ Document::Document()
     title_ = "My new song";
     active_.x = 13 * N;
     active_.y = 1;
+    // BEGIN TEST CODE
     Note n = { 12, 'C', ' ', '4' };
     staves_[1].notes_.push_back(n);
     staves_[0].notes_.push_back(n);
@@ -32,10 +33,14 @@ Document::Document()
     n.scale_ = 18;
     n.sharp_ = ' ';
     staves_[2].notes_.push_back(n);
+    n.scale_ = 12;
+    staves_[2].notes_.push_back(n);
+    n.scale_ = 6;
     staves_[2].notes_.push_back(n);
     staves_[2].name_ = "I3";
     staves_[3].name_ = "PCM";
     staves_[3].type_ = 'P';
+    n.scale_ = 18;
     n.name_ = '0';
     n.height_ = '1';
     n.sharp_ = '6';
@@ -47,6 +52,11 @@ Document::Document()
     n.scale_ = 6;
     staves_[3].notes_.push_back(n);
     staves_[3].notes_.push_back(n);
+
+    marked_ = point_t(0, 2);
+    selected_ = point_t(1, 3);
+    active_ = point_t(13 * N, 3);
+    // END TEST CODE
 }
 
 ICell* Document::Cell(point_t p)
@@ -326,7 +336,7 @@ cell_t TitleCell::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::WHITE;
+    ret.color = color_t::CRIMSON;
     ret.text = (char*)malloc(sizeof(char) * COLUMNS);
     ret.ntext = COLUMNS;
     for(size_t i = 0; i < COLUMNS; ++i) {
@@ -493,6 +503,26 @@ void NoteCell::UserInput(std::string text)
     doc_.UpdateCache();
 }
 
+static void AdjustColumn(Document& doc, int row, int& note)
+{
+    int col = -1;
+    for(size_t i = 0; i < note; ++i) {
+        col += doc.staves_[row].notes_[i].scale_;
+    }
+    note = col + 1;
+}
+
+bool FirstNoteInRange(NoteCell& note, int left, int right)
+{
+    NoteCell* n = &note;
+    while(!n->First()) {
+        point_t p(n->Location().x - 1, n->Location().y);
+        n = (NoteCell*)n->doc_.Cell(p);
+        if(!n) return false;
+    }
+    return n->CacheIndex() >= left && n->CacheIndex() <= right;
+}
+
 cell_t NoteCell::GetRenderThing()
 {
     cell_t ret;
@@ -501,11 +531,20 @@ cell_t NoteCell::GetRenderThing()
     ret.text = (char*)malloc(sizeof(char) * 4);
     ret.ntext = 4;
 
+    // FIXME selection needs to mark all 'hit' notes as blue
+    //       maybe have a giant bitmap marking things as selected?
     int left = doc_.marked_.x;
     int right = doc_.selected_.x;
     int top = doc_.marked_.y;
     int bottom = doc_.selected_.y;
-    if(left > right) std::swap(left, right);
+    AdjustColumn(doc_, top, left);
+    AdjustColumn(doc_, bottom, right);
+    if(left > right) {
+        std::swap(left, right);
+        right += doc_.staves_[doc_.marked_.y].notes_[doc_.marked_.x].scale_ - 1;
+    } else {
+        right += doc_.staves_[doc_.selected_.y].notes_[doc_.selected_.x].scale_ - 1;
+    }
     if(top > bottom) std::swap(top, bottom);
 
     if(doc_.staves_[staffIdx_].type_ == 'N') {
@@ -514,19 +553,18 @@ cell_t NoteCell::GetRenderThing()
             ret.color = (noteIdx_ % 2) ? color_t::YELLOW : color_t::WHITE;
             ret.text[3] = (noteIdx_ % 2) ? '\0' : 'T';
             if(staffIdx_ >= top && staffIdx_ <= bottom
-                    && noteIdx_ >= left && noteIdx_ <= right)
+                    && FirstNoteInRange(*this, left, right))
             {
                 ret.color = color_t::BLUE;
             }
+            Note& n = doc_.staves_[staffIdx_].notes_[noteIdx_];
+            ret.text[0] = n.name_;
+            ret.text[1] = n.height_;
+            ret.text[2] = n.sharp_;
             if(first_) {
-                Note& n = doc_.staves_[staffIdx_].notes_[noteIdx_];
-                ret.text[0] = n.name_;
-                ret.text[1] = n.height_;
-                ret.text[2] = n.sharp_;
+                ret.text[4] = 'T';
             } else {
-                ret.text[0] = ' ';
-                ret.text[1] = ' ';
-                ret.text[2] = ' ';
+                ret.text[4] = '\0';
             }
         } else {
             ret.color = color_t::BLACK;
@@ -539,7 +577,7 @@ cell_t NoteCell::GetRenderThing()
             ret.color = (noteIdx_ % 2) ? color_t::SEA : color_t::SKY;
             ret.text[3] = '\0';
             if(staffIdx_ >= top && staffIdx_ <= bottom
-                    && noteIdx_ >= left && noteIdx_ <= right)
+                    && FirstNoteInRange(*this, left, right))
             {
                 ret.color = color_t::BLUE;
             }

@@ -28,8 +28,10 @@ public:
           , location_(0, 0)
     {}
 
-protected:
+public:
     Document& doc_;
+
+protected:
     point_t location_;
     size_t width_;
 };
