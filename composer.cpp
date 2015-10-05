@@ -177,6 +177,9 @@ void SetBackgroundColor(color_t c)
     case color_t::GRAY:
         glColor3f(0.4f, 0.4f, .4f);
         break;
+    case color_t::CRIMSON:
+        glColor3f(0.3f, 0.f, 0.f);
+        break;
     }
 }
 
@@ -206,6 +209,9 @@ void SetForegroundColor(color_t c)
         glColor3f(1.f, 1.f, 1.f);
         break;
     case color_t::GRAY:
+        glColor3f(1.f, 1.f, 1.f);
+        break;
+    case color_t::CRIMSON:
         glColor3f(1.f, 1.f, 1.f);
         break;
     }

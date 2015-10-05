@@ -9,7 +9,8 @@ enum class color_t {
     SEA,        // alternating with sky in table for pcm
     BLUE,       // status bar, selection, title
     GOLD,       // active cell
-    GRAY        // rests
+    GRAY,       // rests
+    CRIMSON     // eugh
 };
 
 #define N (2)

@@ -303,7 +303,7 @@ cell_t StaffName::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::BLACK;
+    ret.color = color_t::WHITE;
     ret.text = (char*)malloc(sizeof(char) * 8);
     ret.ntext = 8;
     for(size_t i = 0; i < 8; ++i) {
@@ -324,7 +324,7 @@ cell_t StaffType::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::WHITE;
+    ret.color = color_t::CRIMSON;
     ret.text = (char*)malloc(sizeof(char) * 1);
     ret.ntext = 1;
     ret.text[0] = Text()[0];
@@ -348,7 +348,7 @@ cell_t StaffScale::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::BLACK;
+    ret.color = color_t::WHITE;
     ret.text = (char*)malloc(sizeof(char) * 3);
     ret.ntext = 3;
     size_t scale = doc_.staves_[staffIdx_].scale_;
@@ -378,7 +378,7 @@ cell_t StaffInterpolation::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::WHITE;
+    ret.color = color_t::CRIMSON;
     ret.text = (char*)malloc(sizeof(char) * 1);
     ret.ntext = 1;
     if(doc_.staves_[staffIdx_].type_ == 'P') {
