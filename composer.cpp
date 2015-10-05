@@ -25,7 +25,8 @@ int windowW, windowH, window;
 #define GLYPH_H_REAL (152.38f)
 #define GLYPH_W (GLYPH_W_REAL * N)
 #define GLYPH_H (GLYPH_H_REAL * N)
-#define GLYPH_BASELINE (119.05f * N)
+//#define GLYPH_BASELINE (119.05f * N)
+#define GLYPH_BASELINE (117.f * N)
 //#define COLUMNS (77)
 #ifdef WEIRD_WINDOWS
 #define CANVAS_W (GLYPH_W * (COLUMNS + 1))
@@ -387,12 +388,13 @@ static void DrawCell(cell_t c)
                               DrawGraphical(c.y, c.x/N, c.x%N, c.color, g.base, g.mult);
                               break; }
                 case TXT:
-                          DrawNote(c.y, c.x/N, c.x%N, c.color, c.text[3], c.text[0], c.text[2], c.text[1]);
+                          DrawNote(c.y, c.x/N, c.x%N, c.color, c.text[3], c.text[1], c.text[2], c.text[0]);
                           break;
             };
             break;
         case cell_t::SAMPLE:
-            DrawNote(c.x/N, c.y, c.x%N, c.color, false, c.text[0], c.text[1], c.text[2]);
+            DrawNote(c.y, c.x/N, c.x%N, c.color, false, c.text[1], c.text[2], c.text[0]);
+            break;
     }
 }
 
@@ -474,8 +476,8 @@ static void update(int value)
 {
     // NOP
 
-    glutPostRedisplay();
-    glutTimerFunc(17, update, 0);
+    //glutPostRedisplay();
+    //glutTimerFunc(35, update, 0);
 }
 
 static void draw()

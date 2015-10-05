@@ -13,11 +13,40 @@ Document::Document()
     for(int i = 0; i < 10; ++i) {
         staves_.emplace_back();
         staves_.back().type_ = 'N';
-        staves_.back().scale_ = 64;
+        staves_.back().scale_ = 48;
         staves_.back().interpolation_ = 'T';
     }
+    title_ = "My new song";
     active_.x = 13 * N;
     active_.y = 1;
+    Note n = { 12, 'C', ' ', '4' };
+    staves_[1].notes_.push_back(n);
+    staves_[0].notes_.push_back(n);
+    staves_[0].notes_.push_back(n);
+    n.sharp_ = '#';
+    staves_[0].notes_.push_back(n);
+    n.sharp_ = 'b';
+    staves_[0].notes_.push_back(n);
+    staves_[0].name_ = "I1";
+    staves_[1].name_ = "I2";
+    n.scale_ = 18;
+    n.sharp_ = ' ';
+    staves_[2].notes_.push_back(n);
+    staves_[2].notes_.push_back(n);
+    staves_[2].name_ = "I3";
+    staves_[3].name_ = "PCM";
+    staves_[3].type_ = 'P';
+    n.name_ = '0';
+    n.height_ = '1';
+    n.sharp_ = '6';
+    staves_[3].notes_.push_back(n);
+    n.name_ = '1';
+    n.height_ = '2';
+    n.sharp_ = '8';
+    staves_[3].notes_.push_back(n);
+    n.scale_ = 6;
+    staves_[3].notes_.push_back(n);
+    staves_[3].notes_.push_back(n);
 }
 
 ICell* Document::Cell(point_t p)
@@ -135,7 +164,7 @@ void Document::Scroll(size_t col)
                 continue;
             } else {
                 note->SetIndex(-1);
-                note->SetFirst((j == 0) || (col + j == 0));
+                note->SetFirst((j == 0) || (col + j == cache_[i].size()));
                 continue;
             }
 
@@ -259,7 +288,17 @@ void Document::Delete()
 
 int Document::Duration()
 {
-    return 0;
+    size_t maxDuration = 0;
+    maxDuration = std::accumulate(staves_.begin(), staves_.end(), maxDuration,
+            [](size_t duration, Staff const& s) -> size_t {
+                double scale = (s.scale_) ? 44100.0 / s.scale_ : 1.0;
+                double dur = 0;
+                dur = std::accumulate(s.notes_.begin(), s.notes_.end(), dur, [scale](double dur, Note const& n) -> double {
+                        return dur + scale * n.scale_;
+                    });
+                return std::max(duration, (size_t)dur);
+            });
+    return maxDuration / 44100;
 }
 
 int Document::Position()
