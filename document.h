@@ -2,7 +2,11 @@
 #define DOCUMENT_H
 
 #include "common.h"
-#include "document_display.h"
+#include <vector>
+#include <list>
+#include <sstream>
+
+class ICell;
 
 enum class InsertMode_t
 {
@@ -13,10 +17,27 @@ enum class InsertMode_t
 
 struct Note
 {
-    int scale;
+    int scale_;
     char name_;
     char sharp_;
     char height_;
+
+    std::string BuildString(char type)
+    {
+        std::stringstream ss;
+        Note& n = *this;
+        if(type == 'N') {
+            ss << n.scale_ << n.name_; 
+            if(n.sharp_ == '#' || n.sharp_ == 'b') {
+                ss << n.sharp_;
+            }
+            ss << n.height_;
+        } else if(type == 'P') {
+            int samp = (n.name_ - '0') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
+            ss << samp;
+        }
+        return ss.str();
+    }
 };
 
 struct Staff
@@ -26,22 +47,38 @@ struct Staff
     unsigned scale_;
     char interpolation_;
 
-    std::list<Note> notes_;
+    std::vector<Note> notes_;
 };
 
 struct Document // FIXME worry about proper encapsulation later
 {
+    Document();
     // interface for renderer
     void Copy();
     void Cut();
     void Paste();
-    InsertMode_t InsertMode();
-    void SetInsertMode(InsertMode_t);
+    void Delete();
+    void NewNote();
+    InsertMode_t InsertMode() { return insertMode_; }
+    void SetInsertMode(InsertMode_t im) { insertMode_ = im; }
 
     ICell* Active() { return Cell(active_); }
+    void SetActive(ICell* c);
+    void SetMarked(ICell* c);
+    void SetSelected(ICell* c);
 
-    void ScrollLeft(bool byPage);
+    void ScrollLeft(bool byPage)
+    {
+        if(byPage) {
+            scroll_ -= (COLUMNS - 14);
+        } else {
+            scroll_ -= ((COLUMNS - 14) * 2 / 5);
+        }
+        if(scroll_ < 0) scroll_ = 0;
+    }
     void ScrollRight(bool byPage);
+
+    void UpdateCache();
 
     void Open(std::istream&);
     void Save(std::ostream&);
@@ -49,18 +86,20 @@ struct Document // FIXME worry about proper encapsulation later
     void InitCells();
     void Scroll(size_t col);
     ICell* Cell(point_t);
+    ICell* Cell(int x, int y) { return Cell(point_t(x, y)); }
 
     std::string title_;
-    std::list<Staff> staves_;
-    std::list<ICell*> cells_;
+    std::vector<Staff> staves_;
+    std::vector<ICell*> cells_;
+    std::vector<std::vector<int>> cache_;
 
-    size_t scroll_;
+    int scroll_ = 0;
 
-    point_t active_; // screen coords
-    point_t mark_; // virtual note coords
-    point_t selected_; // virtual note coords
+    point_t active_ = { 0, 0 }; // screen coords
+    point_t marked_ = { 0, 0 }; // virtual note coords
+    point_t selected_ = { 0, 0 }; // virtual note coords
 
-    insertMode_t insertMode;
+    InsertMode_t insertMode_ = InsertMode_t::INSERT;
 
     std::list<std::list<Note>> buffer_;
 };

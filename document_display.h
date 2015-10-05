@@ -5,6 +5,8 @@
 #include "document.h"
 
 #include <functional>
+#include <sstream>
+#include <assert.h>
 
 // ===========================================================
 // Common
@@ -18,14 +20,18 @@ public:
     point_t Location() { return location_; }
     void SetLocation(point_t p) { location_ = p; }
 
+    void SetWidth(size_t w) { width_ = w; }
+    size_t Width() { return width_; }
+
     ACell(Document& doc)
         : doc_(doc)
           , location_(0, 0)
     {}
 
-private:
+protected:
     Document& doc_;
     point_t location_;
+    size_t width_;
 };
 
 // ===========================================================
@@ -40,10 +46,10 @@ public:
     point_t Mark() { doc_.SetActive(this); return Location(); }
     cell_t GetRenderThing();
 
-    std::string Text() { return doc_.Title(); }
+    std::string Text() { return doc_.title_; }
     void UserInput(std::string title)
     {
-        doc_.SetTitle(title);
+        doc_.title_ = title;
     }
 
     TitleCell(Document& doc)
@@ -53,7 +59,7 @@ public:
     point_t Left() { return Location(); }
     point_t Right() { return Location(); }
     point_t Top() { return Location(); }
-    point_t Bottom() { return doc_.Cell(point_t(14, 1)->Location(); }
+    point_t Bottom() { return doc_.Cell(point_t(14, 1))->Location(); }
 };
 
 // ===========================================================
@@ -72,9 +78,9 @@ public:
     void UserInput(std::string);
 
     point_t Left() { return Location(); }
-    point_t Right() { return doc_.Cell(Location().x + 1, Location().y); }
-    point_t Top() { return doc_.Cell(Location().x, Location().y - 1); }
-    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1); }
+    point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
+    point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
+    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
 
     void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
     StaffName(Document& doc)
@@ -85,16 +91,76 @@ private:
     size_t staffIdx_;
 };
 
-class StaffType : public ACell
+struct StaffType : public ACell
 {
+    virtual ~StaffType() {}
+    point_t Select() { return doc_.Active()->Location(); }
+    point_t Mark() { doc_.SetActive(this); return Location(); }
+    cell_t GetRenderThing();
+
+    std::string Text() { return std::string(1, doc_.staves_[staffIdx_].type_); }
+    void UserInput(std::string);
+
+    point_t Left() { return doc_.Cell(Location().x - 1, Location().y)->Location(); }
+    point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
+    point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
+    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
+
+    void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
+    StaffType(Document& doc)
+        : ACell(doc)
+          , staffIdx_(0)
+    {}
+private:
+    size_t staffIdx_;
 };
 
-class StaffScale : public ACell
+struct StaffScale : public ACell
 {
+    virtual ~StaffScale() {}
+    point_t Select() { return doc_.Active()->Location(); }
+    point_t Mark() { doc_.SetActive(this); return Location(); }
+    cell_t GetRenderThing();
+
+    std::string Text() { std::stringstream ss; ss << doc_.staves_[staffIdx_].scale_; return ss.str(); }
+    void UserInput(std::string);
+
+    point_t Left() { return doc_.Cell(Location().x - 1, Location().y)->Location(); }
+    point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
+    point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
+    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
+
+    void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
+    StaffScale(Document& doc)
+        : ACell(doc)
+          , staffIdx_(0)
+    {}
+private:
+    size_t staffIdx_;
 };
 
-class StaffInterpolation : public ACell
+struct StaffInterpolation : public ACell
 {
+    virtual ~StaffInterpolation() {}
+    point_t Select() { return doc_.Active()->Location(); }
+    point_t Mark() { doc_.SetActive(this); return Location(); }
+    cell_t GetRenderThing();
+
+    std::string Text() { return std::string(1, doc_.staves_[staffIdx_].interpolation_); }
+    void UserInput(std::string);
+
+    point_t Left() { return doc_.Cell(Location().x - 1, Location().y)->Location(); }
+    point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
+    point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
+    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
+
+    void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
+    StaffInterpolation(Document& doc)
+        : ACell(doc)
+          , staffIdx_(0)
+    {}
+private:
+    size_t staffIdx_;
 };
 
 // ===========================================================
@@ -107,7 +173,9 @@ public:
     virtual ~NoteCell() {}
     point_t Select()
     {
+        doc_.SetActive(this);
         doc_.SetSelected(this);
+        return Location();
     }
 
     point_t Mark()
@@ -121,18 +189,20 @@ public:
 
     std::string Text()
     {
-        return doc_.staves_[staff_].notes_[note_];
+        return doc_.staves_[staffIdx_].notes_[noteIdx_].BuildString(
+                    doc_.staves_[staffIdx_].type_
+                );
     }
     void UserInput(std::string);
 
     point_t Left()
     {
         if(Location().x == 13) {
-            return doc_.Cell(point_t(note->Location().x - 1, note-.Location().y));
+            return doc_.Cell(point_t(Location().x - 1, Location().y))->Location();
         }
         NoteCell* note = this;
         while(1) {
-            if(note.first_) {
+            if(note->First()) {
                 break;
             }
             note = dynamic_cast<NoteCell*>(
@@ -145,11 +215,12 @@ public:
     }
     point_t Right() 
     {
-        NoteCell* note = doc_.Cell(point_t(
+        if(Location().x >= 146) return Location();
+        NoteCell* note = dynamic_cast<NoteCell*>(doc_.Cell(point_t(
                     Location().x + 1,
-                    Location().y));
+                    Location().y)));
         while(1) {
-            if(note.first_) {
+            if(note->First()) {
                 break;
             }
             if(note->Location().x >= 146) return Location();
@@ -164,11 +235,11 @@ public:
     point_t Top()
     {
         if(Location().y <= 1) {
-            return doc_.Cell(0, 0);
+            return doc_.Cell(0, 0)->Location();
         } else {
-            NoteCell* note = doc_.Cell(point_t(Location().x, Location().y - 1));
+            NoteCell* note = dynamic_cast<NoteCell*>(doc_.Cell(point_t(Location().x, Location().y - 1)));
             while(1) {
-                if(note.first_) {
+                if(note->First()) {
                     break;
                 }
                 note = dynamic_cast<NoteCell*>(
@@ -185,9 +256,9 @@ public:
     point_t Bottom()
     {
         if(Location().y >= 11) return Location();
-        NoteCell* note = doc_.Cell(point_t(Location().x, Location().y + 1));
+        NoteCell* note = dynamic_cast<NoteCell*>(doc_.Cell(point_t(Location().x, Location().y + 1)));
         while(1) {
-            if(note.first_) {
+            if(note->First()) {
                 break;
             }
             note = dynamic_cast<NoteCell*>(
@@ -199,18 +270,25 @@ public:
         return note->Location();
     }
 
-    void SetStaff(size_t staffIdx) { staffIdx_ = staffIdx; }
-    void SetIndex(size_t noteIdx) { noteIdx_ = noteIdx; }
+    void SetStaff(int staffIdx) { staffIdx_ = staffIdx; }
+    void SetIndex(int noteIdx) { noteIdx_ = noteIdx; }
     void SetFirst(bool first) { first_ = first; }
     bool First() { return first_; }
+    int Staff() { return staffIdx_; }
+    int Index() { return noteIdx_; }
+    void SetCacheIndex(int i) { cacheIdx_ = i; }
+    int CacheIndex() { return cacheIdx_; }
 
     NoteCell(Document& doc)
         : ACell(doc)
           , staffIdx_(0)
           , noteIdx_(0)
+          , cacheIdx_(-1)
+          , first_(false)
+    {}
 
 private:
-    size_t staffIdx_, noteIdx_;
+    int staffIdx_, noteIdx_, cacheIdx_;
     bool first_;
 };
 

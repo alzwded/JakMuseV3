@@ -42,6 +42,13 @@ const float OFFSET_Y = 0.f;
 #include <list>
 #include <tuple>
 
+#include "document.h"
+#include "icell.h"
+#include "document_display.h"
+
+static Document doc;
+static enum { GFX, TXT } mode_ = TXT;
+
 static void handleResize(int w, int h)
 {
 	glViewport(0, 0, w, h);
@@ -111,16 +118,17 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         }
         break;
     // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
-    case GLUT_KEY_DEL:
+    case GLUT_KEY_DELETE:
         // document.Cut();
         break;
     case GLUT_KEY_F12:
         // rendermode = !rendermode
         break;
-    case GLUT_KEY_ESC:
+    case 27:
         // cancel anything that was going on
         break;
-    case GLUT_KEY_RETURN:
+    case 10:
+    case 13:
         // document.cells(x, y).UserInput(currentText);
         // currentText = document.cells(x, y).Text();
         // inEdit = false;
@@ -316,9 +324,9 @@ void DrawCharacter(int i, int j, color_t bg, char c)
 }
 
 struct gfx {
-    int base, mult;
+    char base, mult;
 };
-static gfx ToGfx(cell c)
+static gfx ToGfx(cell_t c)
 {
     gfx ret = { 0, c.text[2]-'0' };
     switch(c.text[0]) {
@@ -357,29 +365,50 @@ static gfx ToGfx(cell c)
 
 static void drawSomething()
 {
-    // real code
-    cell cells_[1];
-    enum { GFX, TXT } mode_;
-    for(cell&& c : cells_) {
+    // main screen
+    for(ICell*& cell : doc.cells_) {
+        cell_t c = cell->GetRenderThing();
         switch(c.type) {
-        case BLOCK:
+        case cell_t::BLOCK:
             for(size_t i = 0; i < c.ntext; ++i) {
-                DrawCharacter(c.x/N + i, c.y, c.color, c.text[i]);
+                DrawCharacter(c.y, c.x/N + i, c.color, c.text[i]);
             }
             break;
-        case SUBBLOCK:
+        case cell_t::NOTE:
             switch(mode_) {
             case GFX: {
-                gfx g = ToGfx(c.text);
-                DrawGraphical(c.x/N, c.y, c.x%N, c.color, gfx.base, gfx.mult);
+                gfx g = ToGfx(c);
+                DrawGraphical(c.y, c.x/N, c.x%N, c.color, g.base, g.mult);
                 break; }
             case TXT:
-                DrawNote(c.x/N, c.y, c.x%N, c.color, c.text[0], c.text[2], c.text[1]);
+                DrawNote(c.y, c.x/N, c.x%N, c.color, c.text[3], c.text[0], c.text[2], c.text[1]);
                 break;
             };
             break;
+        case cell_t::SAMPLE:
+            DrawNote(c.x/N, c.y, c.x%N, c.color, false, c.text[0], c.text[1], c.text[2]);
         }
+        free(c.text);
     }
+    // satus bar
+    static const int lenText = COLUMNS - 16 - 1;
+    static const int offDuration = COLUMNS - 16;
+    static const int lenDuration = 5 + 1;
+    static const int offPosition = COLUMNS - 9;
+    static const int lenPosition = 5 + 1 + 2 + 1;
+    for(size_t i = 0; i < lenText; ++i) {
+        DrawCharacter(11, i, color_t::WHITE, ' '); // currentText
+    }
+    DrawCharacter(11, lenText, color_t::BLACK, ' '); // blank
+    for(size_t i = 0; i < lenDuration - 1; ++i) {
+        DrawCharacter(11, i + offDuration, color_t::WHITE, '0');
+    }
+    DrawCharacter(11, offDuration + lenDuration - 1, color_t::WHITE, 's');
+    DrawCharacter(11, offDuration + lenDuration, color_t::BLACK, ' ');
+    for(size_t i = 0; i < lenPosition; ++i) {
+        DrawCharacter(11, offPosition + i, color_t::WHITE, ' ');
+    }
+    DrawCharacter(11, offPosition + lenPosition - 1, color_t::WHITE, '%');
 }
 
 static void update(int value)
@@ -422,6 +451,8 @@ int main(int argc, char* argv[])
     //glDisable(GL_CULL_FACE);
     //glDisable(GL_DEPTH_TEST);
 
+    doc.UpdateCache();
+    doc.InitCells();
 
     // set up ortho 2d
     glMatrixMode(GL_PROJECTION);

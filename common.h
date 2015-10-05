@@ -18,10 +18,17 @@ enum class color_t {
 
 struct cell_t {
     size_t x, y;
-    enum { BLOCK, SUBBLOCK } type;
+    enum { BLOCK, NOTE, SAMPLE } type;
     color_t color;
     char* text; // base, mult, sharp or blablabla
     size_t ntext;
 };
+
+struct point_t {
+    int x, y;
+
+    point_t(int X, int Y) : x(X), y(Y) {}
+};
+
 
 #endif
