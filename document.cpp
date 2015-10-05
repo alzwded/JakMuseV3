@@ -10,7 +10,7 @@ static size_t numThingsPerLine = 0;
 
 Document::Document()
 {
-    for(int i = 0; i < 10; ++i) {
+    for(int i = 0; i < ROWS - 2; ++i) {
         staves_.emplace_back();
         staves_.back().type_ = 'N';
         staves_.back().scale_ = 48;
@@ -82,7 +82,7 @@ void Document::InitCells()
     title->SetWidth(COLUMNS * N);
     cells_.push_back(title);
 
-    for(int i = 0; i < 10; ++i) {
+    for(int i = 0; i < ROWS - 2; ++i) {
         size_t x = 0;
         StaffName* name = new StaffName(*this);
         name->SetStaffIndex(i);
@@ -133,7 +133,7 @@ void Document::InitCells()
 void Document::UpdateCache()
 {
     cache_.clear();
-    for(int i = 0; i < 10; ++i) {
+    for(int i = 0; i < ROWS - 2; ++i) {
         cache_.emplace_back();
         for(size_t j = 0; j < staves_[i].notes_.size(); ++j) {
             for(int k = 0; k < staves_[i].notes_[j].scale_; ++k) {
@@ -150,7 +150,7 @@ void Document::UpdateCache()
 
 void Document::Scroll(size_t col)
 {
-    for(int i = 0; i < 10; ++i) {
+    for(int i = 0; i < ROWS - 2; ++i) {
         int j;
         for(j = 0; j < numThingsPerLine - 4; ++j) {
             NoteCell* note = dynamic_cast<NoteCell*>(
@@ -191,7 +191,7 @@ void Document::ScrollRight(bool byPage)
     }
     bool good = false;
     size_t last = 0;
-    for(size_t i = 0; i < 10; ++i) {
+    for(size_t i = 0; i < ROWS - 2; ++i) {
         if(cache_[i].size() > scroll_) {
             good = true;
             last = std::max(last, cache_[i].size() - (COLUMNS - 14));
@@ -528,8 +528,8 @@ cell_t NoteCell::GetRenderThing()
     cell_t ret;
     ret.x = Location().x;
     ret.y = Location().y;
-    ret.text = (char*)malloc(sizeof(char) * 4);
-    ret.ntext = 4;
+    ret.text = (char*)malloc(sizeof(char) * 5);
+    ret.ntext = 5;
 
     // FIXME selection needs to mark all 'hit' notes as blue
     //       maybe have a giant bitmap marking things as selected?

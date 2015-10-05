@@ -15,7 +15,8 @@ enum class color_t {
 
 #define N (2)
 #define COLUMNS (73)
-#define ROWS (12)
+//#define ROWS (12)
+#define ROWS (18)
 
 struct cell_t {
     size_t x, y;

@@ -456,36 +456,36 @@ static void drawSomething()
     sprintf(text, "%-" QUOTE(lenText) "s", currentText.substr(0, lenText).c_str());
     text[lenText] = '\0';
     for(size_t i = 0; i < lenText; ++i) {
-        DrawCharacter(11, i, (modified) ? color_t::GOLD : color_t::CRIMSON, text[i]); // currentText
+        DrawCharacter(ROWS - 1, i, (modified) ? color_t::GOLD : color_t::CRIMSON, text[i]); // currentText
     }
 
     color_t insertcolor = color_t::YELLOW;
     switch(doc.insertMode_) {
     case InsertMode_t::INSERT:
-        DrawCharacter(11, offInsert, insertcolor, 'I');
+        DrawCharacter(ROWS - 1, offInsert, insertcolor, 'I');
         break;
     case InsertMode_t::APPEND:
-        DrawCharacter(11, offInsert, insertcolor, 'A');
+        DrawCharacter(ROWS - 1, offInsert, insertcolor, 'A');
         break;
     case InsertMode_t::REPLACE:
-        DrawCharacter(11, offInsert, insertcolor, 'R');
+        DrawCharacter(ROWS - 1, offInsert, insertcolor, 'R');
     }
 
     char duration[lenDuration + 1];
     sprintf(duration, "%" QUOTE(lenDuration) "u", doc.Duration()%100000);
     duration[lenDuration] = '\0';
     for(size_t i = 0; i < lenDuration; ++i) {
-        DrawCharacter(11, i + offDuration, color_t::CRIMSON, duration[i]);
+        DrawCharacter(ROWS - 1, i + offDuration, color_t::CRIMSON, duration[i]);
     }
-    DrawCharacter(11, offDuration + lenDuration, color_t::CRIMSON, 's');
+    DrawCharacter(ROWS - 1, offDuration + lenDuration, color_t::CRIMSON, 's');
 
     char position[lenPosition + 1];
     sprintf(position, "%5u/%2u%%", doc.Position() % 100000, doc.Percentage() % 100);
     position[lenPosition] = '\0';
     for(size_t i = 0; i < lenPosition; ++i) {
-        DrawCharacter(11, offPosition + i, insertcolor, position[i]);
+        DrawCharacter(ROWS - 1, offPosition + i, insertcolor, position[i]);
     }
-    //DrawCharacter(11, offPosition + lenPosition - 1, color_t::WHITE, '%');
+    //DrawCharacter(ROWS - 1, offPosition + lenPosition - 1, color_t::WHITE, '%');
 }
 
 static void update(int value)
@@ -514,7 +514,8 @@ int main(int argc, char* argv[])
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA);
     windowW = 1024;
-    windowH = 480;
+    //windowH = 480;
+    windowH = 720;
     glutInitWindowSize(windowW, windowH);
     window = glutCreateWindow("Composer");
 
