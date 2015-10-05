@@ -561,20 +561,20 @@ Paramters
     name        default     notes
 
 :Filter:
-    A           0           attack time
-    D           0           decay time
-    S           0.5         sustain level
-    R           0           release time
+    A           0           attack time; can be Input#PCM (0 = 0; 255 = 2550)
+    D           0           decay time; can be Input#PCM (0 = 0; 255 = 2550)
+    S           0.5         sustain level; can be Input#PCM (0 = 0; 255 = 1)
+    R           0           release time; can be Input#PCM (0 = 0;255 = 2550)
     ResetADSR   1           resets counter on note change if in S
-    Low         22050       low pass filter cut off frequency
-    High        1           high pass filter cut off frequency
-    K           0.5         gain factor
+    Low         22050       low pass filter cut off frequency; can be Input#PCM (0 = 1; 255 = 22050)
+    High        1           high pass filter cut off frequency; can be Input#PCM (0 = 1; 255 = 22050)
+    K           0.5         gain factor; can be Input#PCM (0 = 0; 255 = 1)
     InvertADSR  0           invert envelope (A->D, D->A, R->A2)
     [INPUT]     X=0         sample to operate upon
 
 :Generator:
     WT          [0]         looping wave table
-    Glide       0           number of time steps blend frequencies
+    Glide       0           number of time steps blend frequencies; can be Input#PCM (0 = 0; 255 = 2550)
     [INPUT]     F=1         signal frequency set to F Hz
 
 :Input:
