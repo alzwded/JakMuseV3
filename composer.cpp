@@ -440,7 +440,8 @@ static void drawSomething()
     // satus bar
 #define QUOTEH(X) #X
 #define QUOTE(X) QUOTEH(X)
-#define lenText  56
+#define lenText  54
+    static const int offInsert = COLUMNS - 18;
     static const int offDuration = COLUMNS - 16;
 #define lenDuration 5
     static const int offPosition = COLUMNS - 9;
@@ -453,6 +454,18 @@ static void drawSomething()
         DrawCharacter(11, i, (modified) ? color_t::GOLD : color_t::WHITE, text[i]); // currentText
     }
     DrawCharacter(11, lenText, color_t::BLACK, ' '); // blank
+
+    switch(doc.insertMode_) {
+    case InsertMode_t::INSERT:
+        DrawCharacter(11, offInsert, color_t::WHITE, 'I');
+        break;
+    case InsertMode_t::APPEND:
+        DrawCharacter(11, offInsert, color_t::WHITE, 'A');
+        break;
+    case InsertMode_t::REPLACE:
+        DrawCharacter(11, offInsert, color_t::WHITE, 'R');
+    }
+    DrawCharacter(11, offInsert + 1, color_t::BLACK, ' ');
 
     char duration[lenDuration + 1];
     sprintf(duration, "%" QUOTE(lenDuration) "u", doc.Duration()%100000);

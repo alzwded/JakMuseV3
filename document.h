@@ -12,7 +12,7 @@ enum class InsertMode_t
 {
     INSERT,
     APPEND,
-    OVERWRITE
+    REPLACE
 };
 
 struct Note
