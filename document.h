@@ -54,6 +54,10 @@ struct Document // FIXME worry about proper encapsulation later
 {
     Document();
     // interface for renderer
+    int Duration();
+    int Position();
+    int Percentage();
+
     void Copy();
     void Cut();
     void Paste();

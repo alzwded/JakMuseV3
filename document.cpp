@@ -2,6 +2,7 @@
 #include "document_display.h"
 #include "document.h"
 #include <algorithm>
+#include <numeric>
 #include <assert.h>
 
 static bool computedSize = false;
@@ -15,6 +16,8 @@ Document::Document()
         staves_.back().scale_ = 64;
         staves_.back().interpolation_ = 'T';
     }
+    active_.x = 13 * N;
+    active_.y = 1;
 }
 
 ICell* Document::Cell(point_t p)
@@ -28,8 +31,8 @@ ICell* Document::Cell(point_t p)
                     && p.y >= tl.y && p.y < br.y
                     ;
             });
-    assert(found != cells_.end());
-    return *found;
+    if(found != cells_.end()) return *found;
+    return NULL;
 }
 
 void Document::InitCells()
@@ -93,16 +96,16 @@ void Document::UpdateCache()
     cache_.clear();
     for(int i = 0; i < 10; ++i) {
         cache_.emplace_back();
-        int j = 0;
-        for(; j < staves_[i].notes_.size(); ++j) {
+        for(size_t j = 0; j < staves_[i].notes_.size(); ++j) {
             for(int k = 0; k < staves_[i].notes_[j].scale_; ++k) {
                 cache_[i].push_back(j);
-                if(cache_[i].size() >= COLUMNS - 14) break;
+                // if(cache_[i].size() >= COLUMNS - 14) break;
             }
         }
-        for(; j < COLUMNS - 14; ++j) {
-            cache_[i].push_back(-1);
-        }
+        // cache_ should be empty if there are no notes and should only be as long as a full staff
+        //for(; j < (COLUMNS - 13) * 2; ++j) {
+        //    cache_[i].push_back(-1);
+        //}
     }
 }
 
@@ -124,15 +127,18 @@ void Document::Scroll(size_t col)
 
             if(col + j < cache_[i].size()) {
                 note->SetIndex(cache_[i][col + j]);
+                note->SetFirst(
+                        (j == 0)
+                        || (col + j == 0)
+                        || (cache_[i][col + j - 1] != cache_[i][col + j])
+                        );
+                continue;
             } else {
                 note->SetIndex(-1);
+                note->SetFirst((j == 0) || (col + j == 0));
+                continue;
             }
 
-            note->SetFirst(
-                    (j == 0)
-                    || (col + j == 0)
-                    || (cache_[i][col + j - 1] != cache_[i][col + j])
-                    );
         }
     }
 }
@@ -251,6 +257,30 @@ void Document::Delete()
     throw 1;
 }
 
+int Document::Duration()
+{
+    return 0;
+}
+
+int Document::Position()
+{
+    return scroll_;
+}
+
+int Document::Percentage()
+{
+    int max = 1;
+    max = std::accumulate(cache_.begin(), cache_.end(), max, [](int orig, decltype(cache_)::const_reference curr) -> int {
+                int potential = curr.size() - 1;
+                while(potential >= 0) {
+                    if(curr[potential] >= 0) break;
+                    --potential;
+                }
+                return std::max(orig, potential);
+            });
+    return scroll_ * 100 / max;
+}
+
 cell_t TitleCell::GetRenderThing()
 {
     cell_t ret;
@@ -273,7 +303,7 @@ cell_t StaffName::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::WHITE;
+    ret.color = color_t::BLACK;
     ret.text = (char*)malloc(sizeof(char) * 8);
     ret.ntext = 8;
     for(size_t i = 0; i < 8; ++i) {
@@ -294,7 +324,7 @@ cell_t StaffType::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::GOLD;
+    ret.color = color_t::WHITE;
     ret.text = (char*)malloc(sizeof(char) * 1);
     ret.ntext = 1;
     ret.text[0] = Text()[0];
@@ -318,7 +348,7 @@ cell_t StaffScale::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::WHITE;
+    ret.color = color_t::BLACK;
     ret.text = (char*)malloc(sizeof(char) * 3);
     ret.ntext = 3;
     size_t scale = doc_.staves_[staffIdx_].scale_;
@@ -348,7 +378,7 @@ cell_t StaffInterpolation::GetRenderThing()
     ret.x = Location().x;
     ret.y = Location().y;
     ret.type = cell_t::BLOCK;
-    ret.color = color_t::GOLD;
+    ret.color = color_t::WHITE;
     ret.text = (char*)malloc(sizeof(char) * 1);
     ret.ntext = 1;
     if(doc_.staves_[staffIdx_].type_ == 'P') {
@@ -431,11 +461,24 @@ cell_t NoteCell::GetRenderThing()
     ret.y = Location().y;
     ret.text = (char*)malloc(sizeof(char) * 4);
     ret.ntext = 4;
+
+    int left = doc_.marked_.x;
+    int right = doc_.selected_.x;
+    int top = doc_.marked_.y;
+    int bottom = doc_.selected_.y;
+    if(left > right) std::swap(left, right);
+    if(top > bottom) std::swap(top, bottom);
+
     if(doc_.staves_[staffIdx_].type_ == 'N') {
         ret.type = cell_t::NOTE;
         if(noteIdx_ >= 0) {
             ret.color = (noteIdx_ % 2) ? color_t::YELLOW : color_t::WHITE;
             ret.text[3] = (noteIdx_ % 2) ? '\0' : 'T';
+            if(staffIdx_ >= top && staffIdx_ <= bottom
+                    && noteIdx_ >= left && noteIdx_ <= right)
+            {
+                ret.color = color_t::BLUE;
+            }
             if(first_) {
                 Note& n = doc_.staves_[staffIdx_].notes_[noteIdx_];
                 ret.text[0] = n.name_;
@@ -456,6 +499,11 @@ cell_t NoteCell::GetRenderThing()
         if(noteIdx_ >= 0) {
             ret.color = (noteIdx_ % 2) ? color_t::SEA : color_t::SKY;
             ret.text[3] = '\0';
+            if(staffIdx_ >= top && staffIdx_ <= bottom
+                    && noteIdx_ >= left && noteIdx_ <= right)
+            {
+                ret.color = color_t::BLUE;
+            }
             if(first_) {
                 Note& n = doc_.staves_[staffIdx_].notes_[noteIdx_];
                 ret.text[0] = n.name_;
