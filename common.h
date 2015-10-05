@@ -12,4 +12,16 @@ enum class color_t {
     GRAY        // rests
 };
 
+#define N (2)
+#define COLUMNS (73)
+#define ROWS (12)
+
+struct cell_t {
+    size_t x, y;
+    enum { BLOCK, SUBBLOCK } type;
+    color_t color;
+    char* text; // base, mult, sharp or blablabla
+    size_t ntext;
+};
+
 #endif

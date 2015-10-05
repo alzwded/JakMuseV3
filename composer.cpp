@@ -18,15 +18,14 @@ int windowW, windowH, window;
 //#define CANVAS_W (8066.52f)
 //#define CANVAS_H (1828.56f)
 
-#define N (2.f)
+#include "common.h"
+
 #define GLYPH_W_REAL (104.76f)
 #define GLYPH_H_REAL (152.38f)
 #define GLYPH_W (GLYPH_W_REAL * N)
 #define GLYPH_H (GLYPH_H_REAL * N)
 #define GLYPH_BASELINE (119.05f * N)
 //#define COLUMNS (77)
-#define COLUMNS (73)
-#define ROWS (12)
 #ifdef WEIRD_WINDOWS
 #define CANVAS_W (GLYPH_W * (COLUMNS + 1))
 #define CANVAS_H (GLYPH_H * (ROWS + 1))
@@ -42,11 +41,6 @@ const float OFFSET_Y = 0.f;
 #include <string>
 #include <list>
 #include <tuple>
-
-//#include "document.h"
-#include "common.h"
-
-
 
 static void handleResize(int w, int h)
 {
@@ -74,20 +68,69 @@ static void handleMouse(int button, int state, int X, int Y)
     int x = 0, y = 0;
     x = (int)((float)X / windowW * CANVAS_W);
     y = (int)((float)Y / windowH * CANVAS_H);
+    x = x / GLYPH_W / N;
+    y = y / GLYPH_H;
 
     switch(state) {
     case GLUT_UP:
-        //if(onmouseup) onmouseup(x, y, btn);
+        switch(button) {
+        case GLUT_LEFT_BUTTON:
+            // document.cells(x, y).Mark()
+            break;
+        case GLUT_RIGHT_BUTTON:
+            // document.cells(x, y).Select();
+            break;
+        case GLUT_MIDDLE_BUTTON:
+            // document.Copy();
+            // document.cells(x, y).Paste();
+            break;
+        }
         break;
     case GLUT_DOWN:
-        //if(onmousedown) onmousedown(x, y, btn);
         break;
     }
 }
 
 static void handleKeyRelease(unsigned char key, int x, int y)
 {
+    int modifiers = glutGetModifiers();
     //if(onkeyup) onkeyup(key);
+    switch(key) {
+    case GLUT_KEY_LEFT:
+        if(modifiers & (GLUT_ACTIVE_CTRL|GLUT_ACTIVE_SHIFT)) {
+            // document.ScrollLeft(false);
+            // document.cells(&x, &y).Select();
+        } else if(modifiers & GLUT_ACTIVE_CTRL) {
+            // document.ScrollLeft(false);
+        } else if(modifiers & GLUT_ACTIVE_SHIFT) {
+            // x,y = document.cells(x, y).Left();
+            // x,y = document.cells(&x, &y).Select();
+        } else {
+            // x, y = document.cells(x, y).Left();
+            // document.cells(&x, &y).Mark();
+        }
+        break;
+    // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
+    case GLUT_KEY_DEL:
+        // document.Cut();
+        break;
+    case GLUT_KEY_F12:
+        // rendermode = !rendermode
+        break;
+    case GLUT_KEY_ESC:
+        // cancel anything that was going on
+        break;
+    case GLUT_KEY_RETURN:
+        // document.cells(x, y).UserInput(currentText);
+        // currentText = document.cells(x, y).Text();
+        // inEdit = false;
+    default:
+        // inEdit = true;
+        // if backspace currentText = currentText.substr(0, size() - 1);
+        // else currentText.append(key);
+        break;
+    }
+
 }
 
 static void handleKeyPress(unsigned char key, int x, int y)
@@ -272,63 +315,71 @@ void DrawCharacter(int i, int j, color_t bg, char c)
     glPopMatrix();
 }
 
+struct gfx {
+    int base, mult;
+};
+static gfx ToGfx(cell c)
+{
+    gfx ret = { 0, c.text[2]-'0' };
+    switch(c.text[0]) {
+    case 'C': ret.base = 0; break;
+    case 'D': ret.base = 2; break;
+    case 'E': ret.base = 4; break;
+    case 'F': ret.base = 5; break;
+    case 'G': ret.base = 7; break;
+    case 'A': ret.base = 9; break;
+    case 'B': ret.base = 10; break;
+    case 'H': ret.base = 11; break;
+    case '-': ret.base = -64; ret.mult = ' '; return ret; // XXX
+    }
+    switch(c.text[2]) {
+    case ' ':
+        break;
+    case '#':
+        if(ret.base == 11) {
+            ret.mult += 1;
+            ret.base = 0;
+        } else {
+            ret.base += 1;
+        }
+        break;
+    case 'b':
+        if(ret.base == 0) {
+            ret.mult -= 1;
+            ret.base = 11;
+            assert(ret.mult > 0);
+        } else {
+            ret.base -= 1;
+        }
+    }
+    return ret;
+}
+
 static void drawSomething()
 {
-    // text experiment
-    for(int i = 0; i < 12; ++i) {
-        for(int j = 0; j < COLUMNS; ++j) {
-        }
-    }
-
-    for(int i = 0; i < 12; ++i) {
-        for(int j = 0; j < COLUMNS; ++j) {
-            color_t f, b;
-            switch(((i * COLUMNS + j) / (j + 1)) % 8)
-            {
-            case 0: f = b = color_t::WHITE; break;
-            case 1: f = b = color_t::BLACK; break;
-            case 2: f = b = color_t::YELLOW; break;
-            case 3: f = b = color_t::BLUE; break;
-            case 4: f = b = color_t::SKY; break;
-            case 5: f = b = color_t::GOLD; break;
-            case 6: f = b = color_t::SEA; break;
-            case 7: f = b = color_t::GRAY; break;
+    // real code
+    cell cells_[1];
+    enum { GFX, TXT } mode_;
+    for(cell&& c : cells_) {
+        switch(c.type) {
+        case BLOCK:
+            for(size_t i = 0; i < c.ntext; ++i) {
+                DrawCharacter(c.x/N + i, c.y, c.color, c.text[i]);
             }
-            DrawCharacter(i, j, b, j%10 + '0');
+            break;
+        case SUBBLOCK:
+            switch(mode_) {
+            case GFX: {
+                gfx g = ToGfx(c.text);
+                DrawGraphical(c.x/N, c.y, c.x%N, c.color, gfx.base, gfx.mult);
+                break; }
+            case TXT:
+                DrawNote(c.x/N, c.y, c.x%N, c.color, c.text[0], c.text[2], c.text[1]);
+                break;
+            };
+            break;
         }
     }
-
-    for(int i = 1; i < 11; ++i) {
-        for(int j = 13; j < COLUMNS; ++j) {
-            for(int o = 0; o < N; ++o) {
-                color_t f, b;
-                switch((j*(int)N+o)%2)
-                {
-                case 0: f = b = color_t::WHITE; break;
-                case 1: f = b = color_t::YELLOW; break;
-                }
-                static const char sharps[] = { ' ', '#', 'b' };
-
-                DrawNote(i, j, o, b, (j*(int)N+o)%2==0, '1' + (j % 6), sharps[(j*(int)N+o) % 3], 'A' + (j % 8));
-            }
-        }
-    }
-
-    for(int i = 5; i < 11; ++i) {
-        for(int j = 13; j < COLUMNS; ++j) {
-            for(int o = 0; o < N; ++o) {
-                unsigned n = (j*(int)N+o);
-                color_t f, b;
-                switch(n%2)
-                {
-                case 0: f = b = color_t::WHITE; break;
-                case 1: f = b = color_t::YELLOW; break;
-                }
-                DrawGraphical(i, j, o, b, n%12, (j%6) + '1');
-            }
-        }
-    }
-    DrawGraphical(9, 47, 0, color_t::GRAY, -1, ' ');
 }
 
 static void update(int value)

@@ -1,20 +1,34 @@
 #ifndef ICELL_H
 #define ICELL_H
 
+#include "common.h"
+
+#include <tuple>
+
+struct point_t {
+    int x, y;
+
+    point_t(int X, int Y) : x(X), y(Y) {}
+};
+
 class ICell
 {
 public:
     virtual ~ICell() {}
-    ICell* Up() =0; // the cell above
-    ICell* Down() =0; // the cell below
-    ICell* Left() =0; // the cell to the left
-    ICell* Right() =0; // the cell to the right
-    size_t FieldSize() =0; // get the field's size for rendering
-    std::string Text() =0; // get the text for rendering
-    color_t Color() =0;
-    void Type(char) =0; // attempt to type in a character
-    bool AllowsSelect() =0; // headers on the right don't allow select
-    std::pair<size_t, size_t> Location() =0;
+    point_t Select() = 0;
+    point_t Mark() = 0;
+    cell_t GetRenderThing() = 0;
+
+    std::string Text() = 0;
+    void UserInput(std::string) = 0;
+
+    point_t Location() = 0;
+    size_t Width() = 0;
+
+    point_t Left() = 0;
+    point_t Right() = 0;
+    point_t Top() = 0;
+    point_t Bottom() = 0;
 };
 
 #endif

@@ -15,111 +15,17 @@ class ACell : public ICell
 public:
     virtual ~ACell() {}
 
-    ICell* Up() { return up_; }
-    ICell* Down() { return down_; }
-    ICell* Left() { return left_; }
-    ICell* Right() { return right_; }
-    std::pair<size_t, size_t> Location() { return coord_; }
+    point_t Location() { return location_; }
+    void SetLocation(point_t p) { location_ = p; }
 
-    void SetUp(ICell* up) { up_ = up; }
-    void SetDown(ICell* down) { down_ = down; }
-    void SetLeft(ICell* left) { left_ = left; }
-    void SetRight(ICell* right) { right_ = right; }
-    void SetLocation(size_t top, size_t left) { coord_.first = top; coord_.second = left; }
-
-    ACell()
-        : up_(nullptr), down_(nullptr), left_(nullptr), right_(nullptr)
-          , coord_(0, 0)
+    ACell(Document& doc)
+        : doc_(doc)
+          , location_(0, 0)
     {}
 
 private:
-    ICell* up_, down_, left_, right_;
-    std::pair<size_t, size_t> coord_;
-};
-
-// ===========================================================
-// Staff
-// ===========================================================
-
-class StaffName : public ACell
-{
-public:
-    virtual ~StaffName() {}
-    size_t FieldSize() { return 8; }
-    std::string Text() { return staff_.GetName(); }
-    color_t Color() { return color_t::WHITE; }
-    void Backspace();
-    void Type(char);
-    bool AllowsSelect() { return false; }
-
-private:
-    Staff* staff_;
-};
-
-class StaffType : public ACell
-{
-public:
-    virtual ~StaffType() {}
-    size_t FieldSize() { return 1; }
-    std::string Text();
-    color_t Color() { return color_t::BLACK; }
-    void Backspace();
-    void Type(char);
-    bool AllowsSelect() { return false; }
-
-private:
-    Staff* staff_;
-};
-
-class StaffScale : public ACell
-{
-public:
-    virtual ~StaffScale() {}
-    size_t FieldSize() { return 3; }
-    std::string Text() { return staff_->GetScale(); }
-    color_t Color() { return color_t::WHITE; }
-    void Backspace();
-    void Type(char);
-    bool AllowsSelect() { return false; }
-
-private:
-    Staff* staff_;
-};
-
-class StaffInterpolation : public ACell
-{
-public:
-    virtual ~StaffInterpolation() {}
-    size_t FieldSize() { return 1; }
-    std::string Text();
-    color_t Color() { return color_t::BLACK; }
-    void Backspace();
-    void Type(char);
-    bool AllowsSelect() { return false; }
-
-private:
-    Staff* staff_;
-};
-
-// ===========================================================
-// Cell
-// ===========================================================
-
-class NoteCell : public ACell
-{
-public:
-    virtual ~NoteCell() {}
-    size_t FieldSize() { return 1; }
-    std::string Text();
-    color_t Color();
-    void Backspace();
-    void Type(char);
-    bool AllowsSelect() { return note_; }
-
-    void SetNote(Note*);
-
-private:
-    Note* note_;
+    Document& doc_;
+    point_t location_;
 };
 
 // ===========================================================
@@ -130,19 +36,189 @@ class TitleCell : public ACell
 {
 public:
     virtual ~TitleCell() {}
-    size_t FieldSize() { return 77; }
-    std::string Text() { if(title_) return *title_; return ""; }
-    color_t Color() { return color_t::WHITE; }
-    void Backspace();
-    void Type(char);
-    bool AllowSelect() { return false; }
+    point_t Select() { return doc_.Active()->Location(); }
+    point_t Mark() { doc_.SetActive(this); return Location(); }
+    cell_t GetRenderThing();
 
-    void SetTitle(std::string* title) { title_ = title; }
+    std::string Text() { return doc_.Title(); }
+    void UserInput(std::string title)
+    {
+        doc_.SetTitle(title);
+    }
 
-    TitleCell() : title_(nullptr) {}
+    TitleCell(Document& doc)
+        : ACell(doc)
+    {}
+
+    point_t Left() { return Location(); }
+    point_t Right() { return Location(); }
+    point_t Top() { return Location(); }
+    point_t Bottom() { return doc_.Cell(point_t(14, 1)->Location(); }
+};
+
+// ===========================================================
+// Staff
+// ===========================================================
+
+class StaffName : public ACell
+{
+public:
+    virtual ~StaffName() {}
+    point_t Select() { return doc_.Active()->Location(); }
+    point_t Mark() { doc_.SetActive(this); return Location(); }
+    cell_t GetRenderThing();
+
+    std::string Text() { return doc_.staves_[staffIdx_].name_; }
+    void UserInput(std::string);
+
+    point_t Left() { return Location(); }
+    point_t Right() { return doc_.Cell(Location().x + 1, Location().y); }
+    point_t Top() { return doc_.Cell(Location().x, Location().y - 1); }
+    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1); }
+
+    void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
+    StaffName(Document& doc)
+        : ACell(doc)
+          , staffIdx_(0)
+    {}
+private:
+    size_t staffIdx_;
+};
+
+class StaffType : public ACell
+{
+};
+
+class StaffScale : public ACell
+{
+};
+
+class StaffInterpolation : public ACell
+{
+};
+
+// ===========================================================
+// Cell
+// ===========================================================
+
+class NoteCell : public ACell
+{
+public:
+    virtual ~NoteCell() {}
+    point_t Select()
+    {
+        if(dynamic_cast<NoteCell*>(doc_.Marked())) {
+            doc_.SetSelected(this);
+            return Location();
+        } else {
+            doc_.SetMarked(this);
+            doc_.SetSelected(this);
+            return Location();
+        }
+    }
+
+    point_t Mark()
+    {
+        doc_.SetActive(this);
+        doc_.SetMarked(this);
+        return Location();
+    }
+
+    cell_t GetRenderThing();
+
+    std::string Text()
+    {
+        return doc_.staves_[staff_].notes_[note_];
+    }
+    void UserInput(std::string);
+
+    point_t Left()
+    {
+        if(Location().x == 13) {
+            return doc_.Cell(point_t(note->Location().x - 1, note-.Location().y));
+        }
+        NoteCell* note = this;
+        while(1) {
+            if(note.first_) {
+                break;
+            }
+            note = dynamic_cast<NoteCell*>(
+                    doc_.Cell(point_t(
+                            note->Location().x - 1,
+                            note->Location().y)));
+            assert(note);
+        }
+        return note->Location();
+    }
+    point_t Right() 
+    {
+        NoteCell* note = doc_.Cell(point_t(
+                    Location().x + 1,
+                    Location().y));
+        while(1) {
+            if(note.first_) {
+                break;
+            }
+            if(note->Location().x >= 146) return Location();
+            note = dynamic_cast<NoteCell*>(
+                    doc_.Cell(point_t(
+                            note->Location().x + 1,
+                            note->Location().y)));
+            assert(note);
+        }
+        return note->Location();
+    }
+    point_t Top()
+    {
+        if(Location().y <= 1) {
+            return doc_.Cell(0, 0);
+        } else {
+            NoteCell* note = doc_.Cell(point_t(Location().x, Location().y - 1));
+            while(1) {
+                if(note.first_) {
+                    break;
+                }
+                note = dynamic_cast<NoteCell*>(
+                        doc_.Cell(point_t(
+                                note->Location().x - 1,
+                                note->Location().y)));
+                assert(note);
+            }
+
+            return note->Location();
+        }
+    }
+
+    point_t Bottom()
+    {
+        if(Location().y >= 11) return Location();
+        NoteCell* note = doc_.Cell(point_t(Location().x, Location().y + 1));
+        while(1) {
+            if(note.first_) {
+                break;
+            }
+            note = dynamic_cast<NoteCell*>(
+                    doc_.Cell(point_t(
+                            note->Location().x - 1,
+                            note->Location().y)));
+            assert(note);
+        }
+        return note->Location();
+    }
+
+    void SetStaff(size_t staffIdx) { staffIdx_ = staffIdx; }
+    void SetIndex(size_t noteIdx) { noteIdx_ = noteIdx; }
+    void SetFirst(bool first) { first_ = first; }
+    bool First() { return first_; }
+
+    NoteCell(Document& doc)
+        : ACell(doc)
+          , staffIdx_(0)
+          , noteIdx_(0)
 
 private:
-    std::string* title_;
+    size_t staffIdx_, noteIdx_;
+    bool first_;
 };
 
 #endif
