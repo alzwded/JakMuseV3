@@ -13,7 +13,7 @@ enum class InsertMode_t
 
 struct Note
 {
-    char scale_[3];
+    int scale;
     char name_;
     char sharp_;
     char height_;
@@ -39,8 +39,6 @@ struct Document // FIXME worry about proper encapsulation later
     void SetInsertMode(InsertMode_t);
 
     ICell* Active() { return Cell(active_); }
-    ICell* Marked();
-    ICell* Selected();
 
     void ScrollLeft(bool byPage);
     void ScrollRight(bool byPage);
@@ -55,6 +53,8 @@ struct Document // FIXME worry about proper encapsulation later
     std::string title_;
     std::list<Staff> staves_;
     std::list<ICell*> cells_;
+
+    size_t scroll_;
 
     point_t active_; // screen coords
     point_t mark_; // virtual note coords

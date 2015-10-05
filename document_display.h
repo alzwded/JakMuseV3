@@ -107,14 +107,7 @@ public:
     virtual ~NoteCell() {}
     point_t Select()
     {
-        if(dynamic_cast<NoteCell*>(doc_.Marked())) {
-            doc_.SetSelected(this);
-            return Location();
-        } else {
-            doc_.SetMarked(this);
-            doc_.SetSelected(this);
-            return Location();
-        }
+        doc_.SetSelected(this);
     }
 
     point_t Mark()

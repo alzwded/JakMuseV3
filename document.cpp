@@ -105,3 +105,56 @@ void Document::Scroll(size_t col)
         }
     }
 }
+
+void NoteCell::UserInput(std::string text)
+{
+    if(noteIdx_ < 0) return;
+
+    Note& c = doc_.staves_[staffIdx_].notes_[noteIdx_];
+    if(text.empty()) {
+        c.scale_ = "1";
+        c.name_ = '-';
+        c.sharp_ = ' ';
+        c.height_ = ' ';
+    }
+    bool valid = true;
+    // expecting a number
+    std::string number;
+    for(size_t i = 0; i < text.size(); ++i) {
+        if(isdigit(text[i])) {
+            number.append(text[i]);
+        } else {
+            break;
+        }
+    }
+    if(number.empty()) { return; }
+    text = text.substr(number.size());
+    // expecting a note name
+    if(text.empty()) return;
+    static const char noteNames[] = "ABCDEFGH-";
+    if(!strchr(noteNames, text[0])) {
+        return;
+    }
+    char noteName = text[0];
+    text[0] = text.substr(1);
+    // expecting an optional sharp
+    if(text.empty()) return;
+    char sharp = ' ';
+    if(text[0] == '#' || text[1] == 'b') {
+        sharp = text[0];
+        text = text.substr(1);
+    }
+    // expecting a height
+    if(text.empty()) return;
+    char height = 0;
+    if(isdigit(text[0])) {
+        height = text[0];
+    }
+
+    c.scale_ = atoi(number.c_str());
+    c.name_ = noteName;
+    c.sharp_ = sharp;
+    c.height_ = height;
+
+    doc_.UpdateCache();
+}
