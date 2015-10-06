@@ -571,11 +571,13 @@ Paramters
     K           0.5         gain factor; can be Input#PCM (0 = 0; 255 = 1)
     InvertADSR  0           invert envelope (A->D, D->A, R->A2)
     [INPUT]     X=0         sample to operate upon
+    [RESET]     -
 
 :Generator:
     WT          [0]         looping wave table
     Glide       0           number of time steps blend frequencies; can be Input#PCM (0 = 0; 255 = 2550)
     [INPUT]     F=1         signal frequency set to F Hz
+    [RESET]     -
 
 :Input:
 
@@ -602,6 +604,7 @@ Paramters
 :Noise:
     Type        0           0 or 1 (polynomial coefficients to use for the noise generator)
     [INPUT]     K=1         delay factor (keep a sample for K time steps)
+    [RESET]     -
 
 
 ==============================================================
@@ -613,18 +616,7 @@ Need a note-reset bus line. It's up to the set up to make sure he don't have two
 
 Display:
 
-ICell has TL coordinates, FieldWidth, IsSelected
-everything else stays the same
-on update: wipe list
-           ask list of cells
-           draw them
-           keep them
-           on key up: 
-               query cell do see if it makes sense
-
 delete on staff header: delete everything
-
-Document provides list of cells to be drawn
 
 ==============================================================
 UI
@@ -849,3 +841,39 @@ length: encoded in number of ticks
 scale: pixels 1-8/4
 sharp: pixels 9-13
 note:  pixels 14-23/5
+
+==============================================================
+Revised input file
+==============================================================
+
+#<BEGIN FILE>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SECTION INSTANCES
+# O is global output
+# declares instances of generators, filters, inputs, etc
+# this sets their parameters
+    F1 = new Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4,IN=[F2,F3],RST=I1}
+    F2 = new Filter{A=100,D=100,S=0.5,R=100,ResetADSR=0,Low=22050,High=300,K=0.8,IN=[G1],RST=I1}
+    WT1 = new WaveTable{Interpolation=Truncate,Data=[1,-1]}
+    G1 = new Generator{WT=WT1,Glide=1,IN=[I1],RST=[I1]}
+    I1 = new Input{}
+    F3 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.02,IN=[G2],RST=I1}
+    WT2 = new WaveTable{Interpolation=Cosine,Data=[0,1,0,-1]}
+    G2 = new Generator{WT=WT2,Glide=0,IN=[K1],RST=I1}
+    F4 = new Filter{A=100,D=100,S=0.8,R=30,Low=22050,High=1,K=0.3,IN=[G3],RST=I2}
+    G3 = new Generator{WT=WT2,Glide=1,IN=[F5,I2],RST=I2}
+    I2 = new Input{}
+    F5 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.01,IN=[G4]}
+    G4 = new Generator{WT=WT2,Glide=0,IN=[K2],RST=I2}
+    K1 = new Constant{Value=5}
+    K2 = new Constant{Value=20}
+    N0 = new Noise{Type=0,IN=[I3],RST=I3}
+END SECTION
+
+SECTION NOTES
+    I1 NOTES {Divisor=64, Notes=[16C4, 16D4, 16E4, 16G4, 64C5]}
+    I3, PCM {Interpolation=Cosine, Stride=10,
+        Samples=[0, 4, 7, 9, 10, 9, 7, 4, 0, -4, -7, -9, -10, -9, -7, -4]
+    }
+END SECTION
+#<END FILE>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+

@@ -79,17 +79,20 @@ static void handleMouse(int button, int state, int X, int Y)
     int x = 0, y = 0;
     x = (int)((float)X / windowW * CANVAS_W);
     y = (int)((float)Y / windowH * CANVAS_H);
-    x = x / GLYPH_W / N;
-    y = y / GLYPH_H;
+    x = (x * N / GLYPH_W);
+    y = (y / GLYPH_H);
 
     switch(state) {
     case GLUT_UP:
         switch(button) {
         case GLUT_LEFT_BUTTON:
-            // document.cells(x, y).Mark()
+            doc.Cell(x, y)->Select();
+            doc.Cell(x, y)->Mark();
+            glutPostRedisplay();
             break;
         case GLUT_RIGHT_BUTTON:
-            // document.cells(x, y).Select();
+            doc.Cell(x, y)->Select();
+            glutPostRedisplay();
             break;
         case GLUT_MIDDLE_BUTTON:
             // document.Copy();

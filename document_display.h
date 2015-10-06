@@ -175,15 +175,23 @@ public:
     virtual ~NoteCell() {}
     point_t Select()
     {
-        doc_.SetActive(this);
-        doc_.SetSelected(this);
+        NoteCell* note = this;
+        while(note && !note->First()) {
+            note = dynamic_cast<NoteCell*>(doc_.Cell(note->Left()));
+        }
+        doc_.SetActive(note);
+        doc_.SetSelected(note);
         return Location();
     }
 
     point_t Mark()
     {
-        doc_.SetActive(this);
-        doc_.SetMarked(this);
+        NoteCell* note = this;
+        while(note && !note->First()) {
+            note = dynamic_cast<NoteCell*>(doc_.Cell(note->Left()));
+        }
+        doc_.SetActive(note);
+        doc_.SetMarked(note);
         return Location();
     }
 
