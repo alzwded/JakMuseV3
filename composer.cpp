@@ -43,6 +43,7 @@ const float OFFSET_Y = 0.f;
 #include <string>
 #include <list>
 #include <tuple>
+#include <fstream>
 
 #include "document.h"
 #include "icell.h"
@@ -50,6 +51,7 @@ const float OFFSET_Y = 0.f;
 
 static Document doc;
 static enum { GFX, TXT } mode_ = GFX;
+static enum { EDITING, SAVING, OPENING } inputMode_ = EDITING;
 static std::string currentText;
 static bool modified = false;
 
@@ -59,6 +61,7 @@ static void TextStart()
     if(c) currentText = c->Text();
     else currentText = "";
     modified = false;
+    inputMode_ = EDITING;
 }
 
 static void TextType(char c)
@@ -243,10 +246,15 @@ static void handleSpecialRelease(int key, int x, int y)
         break;
     // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
     case GLUT_KEY_F2:
-        // TODO save doc mode
+        inputMode_ = SAVING;
+        currentText = doc.title_;
+        modified = true;
+        glutPostRedisplay();
         break;
     case GLUT_KEY_F3:
-        // TODO load doc mode
+        inputMode_ = OPENING;
+        currentText = doc.title_;
+        modified = true;
         break;
     case GLUT_KEY_F12:
         mode_ = (mode_ == GFX) ? TXT : GFX;
@@ -275,7 +283,33 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         // document.cells(x, y).UserInput(currentText);
         // currentText = document.cells(x, y).Text();
         // inEdit = false;
-        TextValidate();
+        switch(inputMode_) {
+        case EDITING:
+            TextValidate();
+            break;
+        case OPENING:
+            {
+                std::fstream f(currentText, std::ios::in);
+                if(f.good()) {
+                    doc.Open(f);
+                    doc.title_ = currentText;
+                }
+                inputMode_ = EDITING;
+                TextStart();
+                break;
+            }
+        case SAVING:
+            {
+                std::fstream f(currentText, std::ios::out);
+                if(f.good()) {
+                    doc.Save(f);
+                    doc.title_ = currentText;
+                }
+                inputMode_ = EDITING;
+                TextStart();
+                break;
+            }
+        }
         glutPostRedisplay();
         break;
     case 9: // tab

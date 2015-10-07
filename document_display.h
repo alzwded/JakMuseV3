@@ -51,7 +51,8 @@ public:
     std::string Text() { return doc_.title_; }
     void UserInput(std::string title)
     {
-        doc_.title_ = title;
+        //doc_.title_ = title;
+        // DO NOTHING; title is updated via open/save
     }
 
     TitleCell(Document& doc)

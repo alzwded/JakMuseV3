@@ -223,13 +223,15 @@ void Document::ScrollLeft(bool byPage)
 void Document::Save(std::ostream& fout)
 {
     for(Staff& s : staves_) {
+        if(s.name_.empty()) continue;
+
         fout << s.name_ << " ";
         switch(s.type_) {
         case 'N':
             fout << "NOTES" << " ";
-            fout << "{ " << "Divisor=" << s.scale_ << ", Notes=[" << std::endl;
+            fout << "{ " << "Divisor=" << s.scale_ << ", Notes=[" << std::endl << std::string(4, ' ');
             for(size_t i = 0; i < s.notes_.size(); ++i) {
-                if((i + 1) % 16 == 0) fout << std::endl;
+                if((i + 1) % 16 == 0) fout << std::endl << std::string(4, ' ');
                 Note n = s.notes_[i];
                 fout << n.BuildString('N');
                 if(i < s.notes_.size() - 1) fout << ", ";
@@ -240,13 +242,13 @@ void Document::Save(std::ostream& fout)
         case 'P':
             fout << "PCM" << " " << "{Interpolation=";
             switch(s.interpolation_) {
-            case 'C': fout << "Cosine";
-            case 'T': fout << "Trunc";
-            case 'L': fout << "Linear";
+            case 'C': fout << "Cosine"; break;
+            case 'T': fout << "Trunc"; break;
+            case 'L': fout << "Linear"; break;
             }
-            fout << ", Stride=" << s.scale_ << ", " << "Samples=[" << std::endl;
+            fout << ", Stride=" << s.scale_ << ", " << "Samples=[" << std::endl << std::string(4, ' ');
             for(size_t i = 0; i < s.notes_.size(); ++i) {
-                if((i + 1) % 16 == 0) fout << std::endl;
+                if((i + 1) % 16 == 0) fout << std::endl << std::string(4, ' ');
                 Note n = s.notes_[i];
                 fout << n.BuildString('P');
                 if(i < s.notes_.size() - 1) fout << ", ";
