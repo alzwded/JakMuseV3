@@ -271,6 +271,12 @@ void Document::SetSelected(ICell* c)
     }
 }
 
+void Document::ClearSelection()
+{
+    marked_ = point_t(-1, -1);
+    selected_ = point_t(-1, -1);
+}
+
 void Document::Cut()
 {
     throw 1;
@@ -523,6 +529,37 @@ bool FirstNoteInRange(NoteCell& note, int left, int right)
     return n->CacheIndex() >= left && n->CacheIndex() <= right;
 }
 
+bool Document::IsNoteSelected(ICell* c)
+{
+    NoteCell* note = dynamic_cast<NoteCell*>(c);
+    if(!note) return false;
+
+    int left = marked_.x;
+    int right = selected_.x;
+    int top = marked_.y;
+    int bottom = selected_.y;
+
+    if(left < 0 || right < 0 || top < 0 || bottom < 0) return false;
+
+    AdjustColumn(*this, top, left);
+    AdjustColumn(*this, bottom, right);
+    if(left > right) {
+        std::swap(left, right);
+        right += staves_[marked_.y].notes_[marked_.x].scale_ - 1;
+    } else {
+        right += staves_[selected_.y].notes_[selected_.x].scale_ - 1;
+    }
+    if(top > bottom) std::swap(top, bottom);
+
+    if(note->Staff() >= top && note->Staff() <= bottom
+            && FirstNoteInRange(*note, left, right))
+    {
+        return true;
+    }
+
+    return false;
+}
+
 cell_t NoteCell::GetRenderThing()
 {
     cell_t ret;
@@ -531,30 +568,12 @@ cell_t NoteCell::GetRenderThing()
     ret.text = (char*)malloc(sizeof(char) * 5);
     ret.ntext = 5;
 
-    // FIXME selection needs to mark all 'hit' notes as blue
-    //       maybe have a giant bitmap marking things as selected?
-    int left = doc_.marked_.x;
-    int right = doc_.selected_.x;
-    int top = doc_.marked_.y;
-    int bottom = doc_.selected_.y;
-    AdjustColumn(doc_, top, left);
-    AdjustColumn(doc_, bottom, right);
-    if(left > right) {
-        std::swap(left, right);
-        right += doc_.staves_[doc_.marked_.y].notes_[doc_.marked_.x].scale_ - 1;
-    } else {
-        right += doc_.staves_[doc_.selected_.y].notes_[doc_.selected_.x].scale_ - 1;
-    }
-    if(top > bottom) std::swap(top, bottom);
-
     if(doc_.staves_[staffIdx_].type_ == 'N') {
         ret.type = cell_t::NOTE;
         if(noteIdx_ >= 0) {
             ret.color = (noteIdx_ % 2) ? color_t::YELLOW : color_t::WHITE;
             ret.text[3] = (noteIdx_ % 2) ? '\0' : 'T';
-            if(staffIdx_ >= top && staffIdx_ <= bottom
-                    && FirstNoteInRange(*this, left, right))
-            {
+            if(doc_.IsNoteSelected(this)) {
                 ret.color = color_t::BLUE;
             }
             Note& n = doc_.staves_[staffIdx_].notes_[noteIdx_];
@@ -576,8 +595,7 @@ cell_t NoteCell::GetRenderThing()
         if(noteIdx_ >= 0) {
             ret.color = (noteIdx_ % 2) ? color_t::SEA : color_t::SKY;
             ret.text[3] = '\0';
-            if(staffIdx_ >= top && staffIdx_ <= bottom
-                    && FirstNoteInRange(*this, left, right))
+            if(doc_.IsNoteSelected(this))
             {
                 ret.color = color_t::BLUE;
             }

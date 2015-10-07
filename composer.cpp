@@ -86,8 +86,8 @@ static void handleMouse(int button, int state, int X, int Y)
     case GLUT_UP:
         switch(button) {
         case GLUT_LEFT_BUTTON:
-            doc.Cell(x, y)->Select();
             doc.Cell(x, y)->Mark();
+            doc.Cell(x, y)->Select();
             glutPostRedisplay();
             break;
         case GLUT_RIGHT_BUTTON:

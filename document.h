@@ -70,6 +70,8 @@ struct Document // FIXME worry about proper encapsulation later
     void SetActive(ICell* c);
     void SetMarked(ICell* c);
     void SetSelected(ICell* c);
+    void ClearSelection();
+    bool IsNoteSelected(ICell* note);
 
     void ScrollLeft(bool byPage)
     {

@@ -45,7 +45,7 @@ class TitleCell : public ACell
 public:
     virtual ~TitleCell() {}
     point_t Select() { return doc_.Active()->Location(); }
-    point_t Mark() { doc_.SetActive(this); return Location(); }
+    point_t Mark() { doc_.SetActive(this); doc_.ClearSelection(); return Location(); }
     cell_t GetRenderThing();
 
     std::string Text() { return doc_.title_; }
@@ -73,7 +73,7 @@ class StaffName : public ACell
 public:
     virtual ~StaffName() {}
     point_t Select() { return doc_.Active()->Location(); }
-    point_t Mark() { doc_.SetActive(this); return Location(); }
+    point_t Mark() { doc_.SetActive(this); doc_.ClearSelection(); return Location(); }
     cell_t GetRenderThing();
 
     std::string Text() { return doc_.staves_[staffIdx_].name_; }
@@ -97,7 +97,7 @@ struct StaffType : public ACell
 {
     virtual ~StaffType() {}
     point_t Select() { return doc_.Active()->Location(); }
-    point_t Mark() { doc_.SetActive(this); return Location(); }
+    point_t Mark() { doc_.SetActive(this); doc_.ClearSelection(); return Location(); }
     cell_t GetRenderThing();
 
     std::string Text() { return std::string(1, doc_.staves_[staffIdx_].type_); }
@@ -121,7 +121,7 @@ struct StaffScale : public ACell
 {
     virtual ~StaffScale() {}
     point_t Select() { return doc_.Active()->Location(); }
-    point_t Mark() { doc_.SetActive(this); return Location(); }
+    point_t Mark() { doc_.SetActive(this); doc_.ClearSelection(); return Location(); }
     cell_t GetRenderThing();
 
     std::string Text() { std::stringstream ss; ss << doc_.staves_[staffIdx_].scale_; return ss.str(); }
@@ -145,7 +145,7 @@ struct StaffInterpolation : public ACell
 {
     virtual ~StaffInterpolation() {}
     point_t Select() { return doc_.Active()->Location(); }
-    point_t Mark() { doc_.SetActive(this); return Location(); }
+    point_t Mark() { doc_.SetActive(this); doc_.ClearSelection(); return Location(); }
     cell_t GetRenderThing();
 
     std::string Text() { return std::string(1, doc_.staves_[staffIdx_].interpolation_); }
