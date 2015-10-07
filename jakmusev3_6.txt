@@ -689,28 +689,27 @@ Height: 10 staves * 20 = 200 pixels
 
 Controls:
   mouse:
-    left click:     select cell (selected cell has inverted colours)
+    left click:     select cell (selected cell has inverted colours) Y
     middle click:   yank
-    right click:    select range
+    right click:    select range Y
     scroll:         scroll
   keyboard:
     insert:         insert blank bar
     shift-insert:   paste selection
-    delete:         cut selection
-    shift-delete:   cut selection
-    ctrl-delete:    delete selection without modifying cut buffer
-    ctrl-insert:    copy selection
-    tab:            change insert mode (Insert/Append/Replace)
-    arrows:         move around
-    shift-arrows:   select
-    ctrl-arrows:    scroll
-    pgup/pgdwn:     scroll
-    shift-pgud:     select+scroll
-    [-A-Z0-9#bTNtlc]:   type into first active cell of selection,
-                        wiping contents of selection
-    F2:             save file
+    delete:         delete selection Y
+    shift-delete:   cut selection Y
+    ctrl-delete:    delete selection without modifying cut buffer Y
+    ctrl-insert:    copy selection y
+    tab:            change insert mode (Insert/Append/Replace) Y
+    arrows:         move around Y
+    shift-arrows:   select Y
+    ctrl-arrows:    scroll Y
+    pgup/pgdwn:     scroll Y
+    shift-pgud:     select+scroll Y
+    [-A-Z0-9#bTNtlc]:   type into active cell Y
+    F2:             save file Y
     F3:             load file
-    F12:            toggle notename notation / graphical notation
+    F12:            toggle notename notation / graphical notation Y
 
 new display design and whatnot
 ------------------------------

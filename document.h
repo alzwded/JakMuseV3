@@ -35,8 +35,9 @@ struct Note
             }
             if(n.name_ != '-') ss << n.height_;
         } else if(type == 'P') {
+            int scale = n.scale_;
             int samp = (n.name_ - '0') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
-            ss << samp;
+            ss << scale << " " << samp;
         }
         return ss.str();
     }

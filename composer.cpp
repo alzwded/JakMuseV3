@@ -113,6 +113,18 @@ static void handleMouse(int button, int state, int X, int Y)
     case GLUT_RIGHT_BUTTON:
         btn = 3;
         break;
+    case 4: // scroll down?
+        if(state == GLUT_DOWN) {
+            doc.ScrollRight(false);
+            glutPostRedisplay();
+        }
+        return;
+    case 3: // scroll up?
+        if(state == GLUT_DOWN) {
+            doc.ScrollLeft(false);
+            glutPostRedisplay();
+        }
+        return;
     }
 
     int x = 0, y = 0;
@@ -127,10 +139,12 @@ static void handleMouse(int button, int state, int X, int Y)
         case GLUT_LEFT_BUTTON:
             doc.Cell(x, y)->Mark();
             doc.Cell(x, y)->Select();
+            TextStart();
             glutPostRedisplay();
             break;
         case GLUT_RIGHT_BUTTON:
             doc.Cell(x, y)->Select();
+            TextStart();
             glutPostRedisplay();
             break;
         case GLUT_MIDDLE_BUTTON:
@@ -363,6 +377,10 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         break;
     }
 
+}
+
+static void handleScroll(int wheel, int direction, int x, int y)
+{
 }
 
 static void handleKeyPress(unsigned char key, int x, int y)
@@ -755,6 +773,7 @@ int main(int argc, char* argv[])
     glutSpecialFunc(handleSpecialPress);
     glutSpecialUpFunc(handleSpecialRelease);
     glutMouseFunc(handleMouse);
+    //glutMouseWheelFunc(handleScroll);
     glutReshapeFunc(handleResize);
 
     //glDisable(GL_CULL_FACE);
