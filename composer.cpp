@@ -105,32 +105,126 @@ static void handleMouse(int button, int state, int X, int Y)
     }
 }
 
+static void handleSpecialPress(int key, int x, int y)
+{
+}
+
+typedef point_t(ICell::*mfunc_t)(void);
+static void MovementFunc(mfunc_t mfunc, bool select)
+{
+    ICell* c = doc.Cell((doc.Active()->*mfunc)());
+    if(!select) c = doc.Cell(c->Mark());
+    c = doc.Cell(c->Select());
+    glutPostRedisplay();
+}
+
+static void handleSpecialRelease(int key, int x, int y)
+{
+#define PLOC(P) printf("%d %d\n", P.x, P.y)
+    int modifiers = 0;
+    int mask = 0;
+    mfunc_t mfunc = nullptr;
+    printf("%2X %2X p\n", key, modifiers);
+    switch(key) {
+    case GLUT_KEY_LEFT:
+        modifiers = glutGetModifiers();
+        mfunc = &ICell::Left;
+        if(mask = GLUT_ACTIVE_CTRL|GLUT_ACTIVE_SHIFT,
+                (modifiers & mask) == mask)
+        {
+            doc.ScrollLeft(false);
+            doc.Active()->Select();
+            glutPostRedisplay();
+        } else if(modifiers & GLUT_ACTIVE_CTRL) {
+            doc.ScrollLeft(false);
+            glutPostRedisplay();
+        } else {
+            MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
+        }
+        break;
+    case GLUT_KEY_RIGHT:
+        modifiers = glutGetModifiers();
+        mfunc = &ICell::Right;
+        if(mask = GLUT_ACTIVE_CTRL|GLUT_ACTIVE_SHIFT,
+                (modifiers & mask) == mask)
+        {
+            doc.ScrollRight(false);
+            doc.Active()->Select();
+            glutPostRedisplay();
+        } else if(modifiers & GLUT_ACTIVE_CTRL) {
+            doc.ScrollRight(false);
+            glutPostRedisplay();
+        } else {
+            MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
+        }
+        break;
+    case GLUT_KEY_UP:
+        modifiers = glutGetModifiers();
+        mfunc = &ICell::Top;
+        if(mask = GLUT_ACTIVE_CTRL|GLUT_ACTIVE_SHIFT,
+                (modifiers & mask) == mask)
+        {
+        } else if(modifiers & GLUT_ACTIVE_CTRL) {
+        } else {
+            MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
+        }
+        break;
+    case GLUT_KEY_DOWN:
+        modifiers = glutGetModifiers();
+        mfunc = &ICell::Bottom;
+        if(mask = GLUT_ACTIVE_CTRL|GLUT_ACTIVE_SHIFT,
+                (modifiers & mask) == mask)
+        {
+        } else if(modifiers & GLUT_ACTIVE_CTRL) {
+        } else {
+            MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
+        }
+        break;
+    case GLUT_KEY_PAGE_UP:
+        modifiers = glutGetModifiers();
+        if(modifiers & GLUT_ACTIVE_SHIFT) {
+            doc.ScrollLeft(true);
+            doc.Active()->Select();
+        } else {
+            doc.ScrollLeft(true);
+        }
+        glutPostRedisplay();
+        break;
+    case GLUT_KEY_PAGE_DOWN:
+        modifiers = glutGetModifiers();
+        if(modifiers & GLUT_ACTIVE_SHIFT) {
+            doc.ScrollRight(true);
+            doc.Active()->Select();
+        } else {
+            doc.ScrollRight(true);
+        }
+        glutPostRedisplay();
+        break;
+    // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
+    case GLUT_KEY_F2:
+        // TODO save doc mode
+        break;
+    case GLUT_KEY_F3:
+        // TODO load doc mode
+        break;
+    case GLUT_KEY_F12:
+        mode_ = (mode_ == GFX) ? TXT : GFX;
+        glutPostRedisplay();
+        break;
+    default:
+        // inEdit = true;
+        // if backspace currentText = currentText.substr(0, size() - 1);
+        // else currentText.append(key);
+        break;
+    }
+#undef PLOC
+}
+
 static void handleKeyRelease(unsigned char key, int x, int y)
 {
     int modifiers = glutGetModifiers();
     //if(onkeyup) onkeyup(key);
     switch(key) {
-    case GLUT_KEY_LEFT:
-        if(modifiers & (GLUT_ACTIVE_CTRL|GLUT_ACTIVE_SHIFT)) {
-            // document.ScrollLeft(false);
-            // document.cells(&x, &y).Select();
-        } else if(modifiers & GLUT_ACTIVE_CTRL) {
-            // document.ScrollLeft(false);
-        } else if(modifiers & GLUT_ACTIVE_SHIFT) {
-            // x,y = document.cells(x, y).Left();
-            // x,y = document.cells(&x, &y).Select();
-        } else {
-            // x, y = document.cells(x, y).Left();
-            // document.cells(&x, &y).Mark();
-        }
-        break;
-    // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
-    case GLUT_KEY_DELETE:
-        // document.Cut();
-        break;
-    case GLUT_KEY_F12:
-        // rendermode = !rendermode
-        break;
     case 27:
         // cancel anything that was going on
         break;
@@ -139,6 +233,25 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         // document.cells(x, y).UserInput(currentText);
         // currentText = document.cells(x, y).Text();
         // inEdit = false;
+    case 9: // tab
+        switch(doc.insertMode_)
+        {
+        case InsertMode_t::INSERT:
+            doc.insertMode_ = InsertMode_t::APPEND;
+            break;
+        case InsertMode_t::APPEND:
+            doc.insertMode_ = InsertMode_t::REPLACE;
+            break;
+        case InsertMode_t::REPLACE:
+            doc.insertMode_ = InsertMode_t::INSERT;
+            break;
+        }
+        glutPostRedisplay();
+        break;
+    case 8: // bkspc
+        break;
+    case GLUT_KEY_DELETE:
+        break;
     default:
         // inEdit = true;
         // if backspace currentText = currentText.substr(0, size() - 1);
@@ -526,6 +639,8 @@ int main(int argc, char* argv[])
 
     glutKeyboardFunc(handleKeyPress);
     glutKeyboardUpFunc(handleKeyRelease);
+    glutSpecialFunc(handleSpecialPress);
+    glutSpecialUpFunc(handleSpecialRelease);
     glutMouseFunc(handleMouse);
     glutReshapeFunc(handleResize);
 

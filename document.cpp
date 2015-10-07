@@ -37,6 +37,8 @@ Document::Document()
     staves_[2].notes_.push_back(n);
     n.scale_ = 6;
     staves_[2].notes_.push_back(n);
+    n.name_ = '-';
+    staves_[2].notes_.push_back(n);
     staves_[2].name_ = "I3";
     staves_[3].name_ = "PCM";
     staves_[3].type_ = 'P';
@@ -571,8 +573,18 @@ cell_t NoteCell::GetRenderThing()
     if(doc_.staves_[staffIdx_].type_ == 'N') {
         ret.type = cell_t::NOTE;
         if(noteIdx_ >= 0) {
-            ret.color = (noteIdx_ % 2) ? color_t::YELLOW : color_t::WHITE;
             ret.text[3] = (noteIdx_ % 2) ? '\0' : 'T';
+            if(doc_.staves_[staffIdx_].notes_[noteIdx_].name_ == '-') {
+                ret.color = color_t::GRAY;
+                ret.text[4] = '\0';
+            } else {
+                ret.color = (noteIdx_ % 2) ? color_t::YELLOW : color_t::WHITE;
+                if(first_) {
+                    ret.text[4] = 'T';
+                } else {
+                    ret.text[4] = '\0';
+                }
+            }
             if(doc_.IsNoteSelected(this)) {
                 ret.color = color_t::BLUE;
             }
@@ -580,11 +592,6 @@ cell_t NoteCell::GetRenderThing()
             ret.text[0] = n.name_;
             ret.text[1] = n.height_;
             ret.text[2] = n.sharp_;
-            if(first_) {
-                ret.text[4] = 'T';
-            } else {
-                ret.text[4] = '\0';
-            }
         } else {
             ret.color = color_t::BLACK;
             ret.text[0] = ret.text[1] = ret.text[2] = ' ';

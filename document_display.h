@@ -82,7 +82,11 @@ public:
     point_t Left() { return Location(); }
     point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
     point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
-    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
+    point_t Bottom() { 
+        ICell* c = doc_.Cell(Location().x, Location().y + 1);
+        if(c) return c->Location();
+        else return Location();
+    }
 
     void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
     StaffName(Document& doc)
@@ -106,7 +110,11 @@ struct StaffType : public ACell
     point_t Left() { return doc_.Cell(Location().x - 1, Location().y)->Location(); }
     point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
     point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
-    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
+    point_t Bottom() { 
+        ICell* c = doc_.Cell(Location().x, Location().y + 1);
+        if(c) return c->Location();
+        else return Location();
+    }
 
     void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
     StaffType(Document& doc)
@@ -130,7 +138,11 @@ struct StaffScale : public ACell
     point_t Left() { return doc_.Cell(Location().x - 1, Location().y)->Location(); }
     point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
     point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
-    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
+    point_t Bottom() { 
+        ICell* c = doc_.Cell(Location().x, Location().y + 1);
+        if(c) return c->Location();
+        else return Location();
+    }
 
     void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
     StaffScale(Document& doc)
@@ -154,7 +166,11 @@ struct StaffInterpolation : public ACell
     point_t Left() { return doc_.Cell(Location().x - 1, Location().y)->Location(); }
     point_t Right() { return doc_.Cell(Location().x + Width(), Location().y)->Location(); }
     point_t Top() { return doc_.Cell(Location().x, Location().y - 1)->Location(); }
-    point_t Bottom() { return doc_.Cell(Location().x, Location().y + 1)->Location(); }
+    point_t Bottom() { 
+        ICell* c = doc_.Cell(Location().x, Location().y + 1);
+        if(c) return c->Location();
+        else return Location();
+    }
 
     void SetStaffIndex(size_t staffIdx) { staffIdx_ = staffIdx; }
     StaffInterpolation(Document& doc)
@@ -207,19 +223,15 @@ public:
 
     point_t Left()
     {
-        if(Location().x == 13) {
-            return doc_.Cell(point_t(Location().x - 1, Location().y))->Location();
-        }
         NoteCell* note = this;
         while(1) {
-            if(note->First()) {
-                break;
-            }
-            note = dynamic_cast<NoteCell*>(
-                    doc_.Cell(point_t(
-                            note->Location().x - 1,
-                            note->Location().y)));
-            assert(note);
+            ICell* cell = doc_.Cell(
+                    point_t(
+                       note->Location().x - 1,
+                       note->Location().y));
+            note = dynamic_cast<NoteCell*>(cell);
+            if(!note) return cell->Location();
+            else if(note->First()) break;
         }
         return note->Location();
     }
@@ -233,12 +245,11 @@ public:
             if(note->First()) {
                 break;
             }
-            if(note->Location().x >= 146) return Location();
             note = dynamic_cast<NoteCell*>(
                     doc_.Cell(point_t(
                             note->Location().x + 1,
                             note->Location().y)));
-            assert(note);
+            if(!note) return Location();
         }
         return note->Location();
     }
@@ -265,8 +276,8 @@ public:
 
     point_t Bottom()
     {
-        if(Location().y >= 11) return Location();
         NoteCell* note = dynamic_cast<NoteCell*>(doc_.Cell(point_t(Location().x, Location().y + 1)));
+        if(!note) return Location();
         while(1) {
             if(note->First()) {
                 break;
@@ -275,7 +286,7 @@ public:
                     doc_.Cell(point_t(
                             note->Location().x - 1,
                             note->Location().y)));
-            assert(note);
+            if(!note) return Location();
         }
         return note->Location();
     }
