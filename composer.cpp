@@ -273,7 +273,8 @@ static void handleSpecialRelease(int key, int x, int y)
         modified = true;
         break;
     case GLUT_KEY_F10:
-        // TODO restore undo mark
+        doc.PopState();
+        glutPostRedisplay();
         break;
     case GLUT_KEY_F12:
         mode_ = (mode_ == GFX) ? TXT : GFX;
@@ -296,10 +297,12 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         // TODO save undo point
         switch(inputMode_) {
         case EDITING:
+            doc.PushState();
             TextValidate();
             break;
         case OPENING:
             {
+                doc.PushState();
                 std::fstream f(currentText, std::ios::in);
                 if(f.good()) {
                     doc.Open(f);
@@ -326,6 +329,7 @@ static void handleKeyRelease(unsigned char key, int x, int y)
     case 127:
         // TODO save undo mark
         // TODO check inputMode_ everywhere
+        doc.PushState();
         if(modifiers & GLUT_ACTIVE_SHIFT) doc.Cut();
         else if(modifiers & GLUT_ACTIVE_CTRL) doc.Delete();
         else doc.Delete();
