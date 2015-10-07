@@ -7,7 +7,7 @@ LIBS = freeglut.lib
 
 .SUFFIXES:.cpp .hpp .h .obj
 
-OBJS = composer.obj document.obj
+OBJS = composer.obj document.obj document_display.obj
 
 composer.exe: $(OBJS) freeglut.dll
 	$(LD) $(LDOPTS) $(OBJS) $(LIBS)
