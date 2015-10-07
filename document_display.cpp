@@ -116,7 +116,7 @@ void StaffInterpolation::UserInput(std::string s)
     case 'C':
     case 'T':
     case 'L':
-        doc_.staves_[staffIdx_].type_ = s[0];
+        doc_.staves_[staffIdx_].interpolation_ = s[0];
         break;
     }
 }
