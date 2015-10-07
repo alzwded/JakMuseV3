@@ -205,6 +205,8 @@ public:
         doc_.SetActive(note);
         doc_.SetSelected(note);
         if(doc_.marked_.x < 0 || doc_.marked_.y < 0) doc_.SetMarked(note);
+#if 0
+        // This is not a good idea
         if(!note
                 || note->CacheIndex() < 0
                 || note->CacheIndex() >= doc_.cache_[note->Staff()].size()
@@ -212,6 +214,7 @@ public:
         {
             doc_.ClearSelection();
         }
+#endif
         return Location();
     }
 
@@ -223,6 +226,13 @@ public:
         }
         doc_.SetActive(note);
         doc_.SetMarked(note);
+        if(!note
+                || note->CacheIndex() < 0
+                || note->CacheIndex() >= doc_.cache_[note->Staff()].size()
+                || doc_.cache_[note->Staff()][note->CacheIndex()] < 0)
+        {
+            doc_.ClearSelection();
+        }
         return Location();
     }
 
