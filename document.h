@@ -5,6 +5,8 @@
 #include <vector>
 #include <list>
 #include <sstream>
+#include <deque>
+#include <functional>
 
 class ICell;
 
@@ -60,6 +62,14 @@ struct Document // FIXME worry about proper encapsulation later
     int Max();
     bool AtEnd();
 
+    struct BufferOp
+    {
+        std::function<void(void)> cut;
+        std::vector<decltype(Staff::notes_)> buffer;
+    };
+
+    BufferOp PreCutSelection();
+
     void Copy();
     void Cut();
     void Paste();
@@ -73,7 +83,9 @@ struct Document // FIXME worry about proper encapsulation later
     void SetMarked(ICell* c);
     void SetSelected(ICell* c);
     void ClearSelection();
+    bool GetSelectionBox(int&, int&, int&, int&);
     bool IsNoteSelected(ICell* note);
+    bool IsNoteSelected(int staffIdx, int noteIdx);
 
     void ScrollLeftRight(int);
     void ScrollLeft(bool byPage);
@@ -102,7 +114,11 @@ struct Document // FIXME worry about proper encapsulation later
 
     InsertMode_t insertMode_ = InsertMode_t::INSERT;
 
-    std::list<std::list<Note>> buffer_;
+    decltype(BufferOp::buffer) buffer_;
+
+    void PushState();
+    void PopState();
+    std::deque<std::vector<Staff>> undoStates_;
 };
 
 #endif

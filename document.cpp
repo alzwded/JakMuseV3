@@ -191,22 +191,22 @@ void Document::ScrollLeftRight(int ama)
     bool good = false;
     int last = 0;
     for(size_t i = 0; i < ROWS - 2; ++i) {
-        printf(">%d\n", cache_[i].size());
+        //printf(">%d\n", cache_[i].size());
         const int lineLength = N*(COLUMNS-13);
         int lineDiff = cache_[i].size() - next;
         int preferred = cache_[i].size() - lineLength;
-        printf("%d %d %d\n", lineLength, lineDiff, preferred);
+        //printf("%d %d %d\n", lineLength, lineDiff, preferred);
         if(lineDiff > lineLength) {
             preferred = next;
         }
         last = std::max(last, preferred);
-        printf("%d\n", last);
+        //printf("%d\n", last);
         if(next >= cache_[i].size() - N*(COLUMNS-13)) {
             good = true;
         }
     }
     /*if(good)*/ scroll_ = std::min(last, next);
-    printf("    %d\n", scroll_);
+    //printf("    %d\n", scroll_);
     Scroll(scroll_);
 
 }
@@ -303,12 +303,20 @@ void Document::ClearSelection()
 
 void Document::Cut()
 {
-    throw 1;
+    auto pc = PreCutSelection();
+    buffer_ = pc.buffer;
+    pc.cut();
+    ClearSelection();
+    UpdateCache();
+    ScrollLeftRight(0);
+    Active()->Select();
+    Active()->Mark();
 }
 
 void Document::Copy()
 {
-    throw 1;
+    auto pc = PreCutSelection();
+    buffer_ = pc.buffer;
 }
 
 void Document::Paste()
@@ -319,6 +327,41 @@ void Document::Paste()
 void Document::NewNote()
 {
     throw 1;
+}
+
+Document::BufferOp Document::PreCutSelection()
+{
+    BufferOp ret;
+
+    std::deque<std::function<void(void)>> cuts;
+    int left, right, top, bottom;
+    if(!GetSelectionBox(left, right, top, bottom)) return ret;
+    for(int i = top; i <= bottom; ++i) {
+        Staff& s = staves_[i];
+        ret.buffer.emplace_back();
+
+        decltype(s.notes_)::iterator first = s.notes_.end(), last = s.notes_.end();
+        int n = 0;
+        for(auto&& it = s.notes_.begin(); it != s.notes_.end(); ++it) {
+            int idx = it - s.notes_.begin();
+            if(IsNoteSelected(i, idx)) {
+                ret.buffer[i - top].push_back(s.notes_[idx]);
+                if(first != s.notes_.end()) last = it;
+                else first = it, last = it;
+            }
+        }
+
+        Staff* pStaff = &s;
+        cuts.push_back([pStaff, first, last]() mutable {
+                    if(first != pStaff->notes_.end()) pStaff->notes_.erase(first, last + 1);
+                });
+    }
+
+    ret.cut = [cuts]() {
+        for(auto&& f : cuts) f();
+    };
+
+    return std::move(ret);
 }
 
 void Document::Delete()
@@ -334,7 +377,13 @@ void Document::Delete()
         ScrollLeftRight(0);
         //Scroll(scroll_);
     } else {
-        throw 1;
+        auto pc = PreCutSelection();
+        pc.cut();
+        ClearSelection();
+        UpdateCache();
+        ScrollLeftRight(0);
+        Active()->Select();
+        Active()->Mark();
     }
 }
 
@@ -407,15 +456,12 @@ bool FirstNoteInRange(NoteCell& note, int left, int right)
     return n->CacheIndex() >= left && n->CacheIndex() <= right;
 }
 
-bool Document::IsNoteSelected(ICell* c)
+bool Document::GetSelectionBox(int& left, int& right, int& top, int& bottom)
 {
-    NoteCell* note = dynamic_cast<NoteCell*>(c);
-    if(!note) return false;
-
-    int left = marked_.x;
-    int right = selected_.x;
-    int top = marked_.y;
-    int bottom = selected_.y;
+    left = marked_.x;
+    right = selected_.x;
+    top = marked_.y;
+    bottom = selected_.y;
 
     if(left < 0 || right < 0 || top < 0 || bottom < 0) return false;
 
@@ -429,6 +475,17 @@ bool Document::IsNoteSelected(ICell* c)
     }
     if(top > bottom) std::swap(top, bottom);
 
+    return true;
+}
+
+bool Document::IsNoteSelected(ICell* c)
+{
+    NoteCell* note = dynamic_cast<NoteCell*>(c);
+    if(!note) return false;
+
+    int left, right, top, bottom;
+    if(!GetSelectionBox(left, right, top, bottom)) return false;
+
     if(note->Staff() >= top && note->Staff() <= bottom
             && FirstNoteInRange(*note, left, right))
     {
@@ -436,4 +493,39 @@ bool Document::IsNoteSelected(ICell* c)
     }
 
     return false;
+}
+
+bool Document::IsNoteSelected(int staffIdx, int noteIdx)
+{
+    int left, right, top, bottom;
+    if(!GetSelectionBox(left, right, top, bottom)) return false;
+
+    int col = noteIdx;
+    AdjustColumn(*this, staffIdx, col);
+
+    if(staffIdx >= top && staffIdx <= bottom
+            && col >= left && col <= right)
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void Document::PushState()
+{
+    undoStates_.push_back(staves_);
+    if(undoStates_.size() > 9) undoStates_.pop_front();
+    UpdateCache();
+    ScrollLeftRight(0);
+}
+
+void Document::PopState()
+{
+    if(undoStates_.empty()) return;
+    auto&& state = undoStates_.back();
+    staves_ = state;
+    undoStates_.pop_back();
+    UpdateCache();
+    ScrollLeftRight(0);
 }

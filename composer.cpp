@@ -320,7 +320,9 @@ static void handleKeyRelease(unsigned char key, int x, int y)
     case 127:
         // TODO save undo mark
         // TODO check inputMode_ everywhere
-        doc.Delete();
+        if(modifiers & GLUT_ACTIVE_SHIFT) doc.Cut();
+        else if(modifiers & GLUT_ACTIVE_CTRL) doc.Delete();
+        else doc.Delete();
         glutPostRedisplay();
         TextStart();
         break;
