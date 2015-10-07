@@ -285,6 +285,7 @@ static void handleSpecialRelease(int key, int x, int y)
         inputMode_ = OPENING;
         currentText = doc.title_;
         modified = true;
+        glutPostRedisplay();
         break;
     case GLUT_KEY_F10:
         doc.PopState();
