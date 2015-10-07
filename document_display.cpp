@@ -155,14 +155,12 @@ void NoteCell::UserInput(std::string text)
     // expecting an optional sharp
     if(text.empty() && noteName != '-') return;
     char sharp = ' ';
-    if(text[0] == '#' || text[1] == 'b') {
+    if(text[0] == '#' || text[0] == 'b') {
         sharp = text[0];
         text = text.substr(1);
     }
     // expecting a height
-    printf("a\n");
     if(text.empty() && noteName != '-') return;
-    printf("b\n");
     char height = 0;
     if(noteName != '-') {
         if(isdigit(text[0])) {

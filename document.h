@@ -57,6 +57,8 @@ struct Document // FIXME worry about proper encapsulation later
     int Duration();
     int Position();
     int Percentage();
+    int Max();
+    bool AtEnd();
 
     void Copy();
     void Cut();

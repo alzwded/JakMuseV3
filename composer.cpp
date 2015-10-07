@@ -245,6 +245,16 @@ static void handleSpecialRelease(int key, int x, int y)
         glutPostRedisplay();
         break;
     // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
+    case GLUT_KEY_HOME:
+        doc.scroll_ = 0;
+        doc.ScrollLeftRight(0);
+        glutPostRedisplay();
+        break;
+    case GLUT_KEY_END:
+        doc.scroll_ = doc.Max();
+        doc.ScrollLeftRight(0);
+        glutPostRedisplay();
+        break;
     case GLUT_KEY_F2:
         inputMode_ = SAVING;
         currentText = doc.title_;
@@ -256,14 +266,12 @@ static void handleSpecialRelease(int key, int x, int y)
         currentText = doc.title_;
         modified = true;
         break;
+    case GLUT_KEY_F10:
+        // TODO restore undo mark
+        break;
     case GLUT_KEY_F12:
         mode_ = (mode_ == GFX) ? TXT : GFX;
         glutPostRedisplay();
-        break;
-    default:
-        // inEdit = true;
-        // if backspace currentText = currentText.substr(0, size() - 1);
-        // else currentText.append(key);
         break;
     }
 #undef PLOC
@@ -272,7 +280,6 @@ static void handleSpecialRelease(int key, int x, int y)
 static void handleKeyRelease(unsigned char key, int x, int y)
 {
     int modifiers = glutGetModifiers();
-    //if(onkeyup) onkeyup(key);
     switch(key) {
     case 27:
         TextStart();
@@ -280,9 +287,7 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         break;
     case 10:
     case 13:
-        // document.cells(x, y).UserInput(currentText);
-        // currentText = document.cells(x, y).Text();
-        // inEdit = false;
+        // TODO save undo point
         switch(inputMode_) {
         case EDITING:
             TextValidate();
@@ -312,6 +317,13 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         }
         glutPostRedisplay();
         break;
+    case 127:
+        // TODO save undo mark
+        // TODO check inputMode_ everywhere
+        doc.Delete();
+        glutPostRedisplay();
+        TextStart();
+        break;
     case 9: // tab
         switch(doc.insertMode_)
         {
@@ -331,16 +343,11 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         TextBackspace();
         glutPostRedisplay();
         break;
-    case GLUT_KEY_DELETE:
-        break;
     default:
         if(isgraph(key) || isprint(key) || isspace(key)) {
             TextType(key);
             glutPostRedisplay();
         }
-        // inEdit = true;
-        // if backspace currentText = currentText.substr(0, size() - 1);
-        // else currentText.append(key);
         break;
     }
 
@@ -686,7 +693,11 @@ static void drawSomething()
     DrawCharacter(ROWS - 1, offDuration + lenDuration, color_t::CRIMSON, 's');
 
     char position[lenPosition + 1];
-    sprintf(position, "%5u/%2u%%", doc.Position() % 100000, doc.Percentage() % 100);
+    if(doc.AtEnd()) {
+        sprintf(position, "%5u/END", doc.Position() % 100000);
+    } else {
+        sprintf(position, "%5u/%2u%%", doc.Position() % 100000, doc.Percentage() % 100);
+    }
     position[lenPosition] = '\0';
     for(size_t i = 0; i < lenPosition; ++i) {
         DrawCharacter(ROWS - 1, offPosition + i, insertcolor, position[i]);

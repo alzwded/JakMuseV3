@@ -191,33 +191,36 @@ void Document::ScrollLeftRight(int ama)
     bool good = false;
     int last = 0;
     for(size_t i = 0; i < ROWS - 2; ++i) {
-        if(next < cache_[i].size()) {
+        printf(">%d\n", cache_[i].size());
+        const int lineLength = N*(COLUMNS-13);
+        int lineDiff = cache_[i].size() - next;
+        int preferred = cache_[i].size() - lineLength;
+        printf("%d %d %d\n", lineLength, lineDiff, preferred);
+        if(lineDiff > lineLength) {
+            preferred = next;
+        }
+        last = std::max(last, preferred);
+        printf("%d\n", last);
+        if(next >= cache_[i].size() - N*(COLUMNS-13)) {
             good = true;
-            const int lineLength = N*(COLUMNS-13);
-            int lineDiff = cache_[i].size() - next;
-            int preferred = cache_[i].size() - lineLength;
-            printf("%d %d %d\n", lineLength, lineDiff, preferred);
-            if(lineDiff > lineLength) {
-                preferred = next;
-            }
-            last = std::max(last, preferred);
         }
     }
-    if(good) scroll_ = std::min(last, next);
+    /*if(good)*/ scroll_ = std::min(last, next);
+    printf("    %d\n", scroll_);
     Scroll(scroll_);
 
 }
 
 void Document::ScrollRight(bool byPage)
 {
-    if(byPage) ScrollLeftRight(COLUMNS - 14);
-    else ScrollLeftRight((COLUMNS - 14) * 2 / 5);
+    if(byPage) ScrollLeftRight(N*(COLUMNS - 13));
+    else ScrollLeftRight((COLUMNS - 13) * 2 * N / 5);
 }
 
 void Document::ScrollLeft(bool byPage)
 {
-    if(byPage) ScrollLeftRight(-(COLUMNS - 14));
-    else ScrollLeftRight(-((COLUMNS - 14) * 2 / 5));
+    if(byPage) ScrollLeftRight(-N*(COLUMNS - 13));
+    else ScrollLeftRight(-((COLUMNS - 13) * 2 * N / 5));
 }
 
 void Document::Save(std::ostream& fout)
@@ -320,7 +323,19 @@ void Document::NewNote()
 
 void Document::Delete()
 {
-    throw 1;
+    ICell* c = Active();
+    if(c->Location().y == 0) return;
+    if(c->Location().x < N*13) {
+        Staff& s = staves_[c->Location().y - 1];
+        s.name_ = "";
+        s.type_ = 'N';
+        s.notes_.clear();
+        UpdateCache();
+        ScrollLeftRight(0);
+        //Scroll(scroll_);
+    } else {
+        throw 1;
+    }
 }
 
 int Document::Duration()
@@ -342,6 +357,21 @@ int Document::Position()
 {
     return scroll_;
 }
+
+int Document::Max()
+{
+    int max = 0;
+    max = std::accumulate(cache_.begin(), cache_.end(), max, [](int max, decltype(cache_)::const_reference line) -> int {
+                return std::max(max, (int)line.size());
+            });
+    return max;
+}
+
+bool Document::AtEnd()
+{ 
+    return scroll_ + N*(COLUMNS - 13) >= Max();
+}
+
 
 int Document::Percentage()
 {
