@@ -246,13 +246,19 @@ static void handleSpecialRelease(int key, int x, int y)
         break;
     // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
     case GLUT_KEY_HOME:
+        modifiers = glutGetModifiers();
         doc.scroll_ = 0;
         doc.ScrollLeftRight(0);
+        if(modifiers & GLUT_ACTIVE_SHIFT) doc.Active()->Select();
+        TextStart();
         glutPostRedisplay();
         break;
     case GLUT_KEY_END:
+        modifiers = glutGetModifiers();
         doc.scroll_ = doc.Max();
         doc.ScrollLeftRight(0);
+        if(modifiers & GLUT_ACTIVE_SHIFT) doc.Active()->Select();
+        TextStart();
         glutPostRedisplay();
         break;
     case GLUT_KEY_F2:
