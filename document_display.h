@@ -197,6 +197,14 @@ public:
         }
         doc_.SetActive(note);
         doc_.SetSelected(note);
+        if(doc_.marked_.x < 0 || doc_.marked_.y < 0) doc_.SetMarked(note);
+        if(!note
+                || note->CacheIndex() < 0
+                || note->CacheIndex() >= doc_.cache_[note->Staff()].size()
+                || doc_.cache_[note->Staff()][note->CacheIndex()] < 0)
+        {
+            doc_.ClearSelection();
+        }
         return Location();
     }
 
