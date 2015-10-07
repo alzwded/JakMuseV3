@@ -160,7 +160,13 @@ struct StaffInterpolation : public ACell
     point_t Mark() { doc_.SetActive(this); doc_.ClearSelection(); return Location(); }
     cell_t GetRenderThing();
 
-    std::string Text() { return std::string(1, doc_.staves_[staffIdx_].interpolation_); }
+    std::string Text() { 
+        if(doc_.staves_[staffIdx_].type_ == 'P') {
+            return std::string(1, doc_.staves_[staffIdx_].interpolation_);
+        } else {
+            return " ";
+        }
+    }
     void UserInput(std::string);
 
     point_t Left() { return doc_.Cell(Location().x - 1, Location().y)->Location(); }
@@ -223,6 +229,7 @@ public:
 
     std::string Text()
     {
+        if(noteIdx_ < 0) return "";
         return doc_.staves_[staffIdx_].notes_[noteIdx_].BuildString(
                     doc_.staves_[staffIdx_].type_
                 );

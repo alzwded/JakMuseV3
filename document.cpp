@@ -184,23 +184,40 @@ void Document::Scroll(size_t col)
     }
 }
 
-void Document::ScrollRight(bool byPage)
+void Document::ScrollLeftRight(int ama)
 {
-    if(byPage) {
-        scroll_ += (COLUMNS - 14);
-    } else {
-        scroll_ += ((COLUMNS - 14) * 2 / 5);
-    }
+    int next = scroll_ + ama;
+    if(next < 0) next = 0;
     bool good = false;
-    size_t last = 0;
+    int last = 0;
     for(size_t i = 0; i < ROWS - 2; ++i) {
-        if(cache_[i].size() > scroll_) {
+        if(next < cache_[i].size()) {
             good = true;
-            last = std::max(last, cache_[i].size() - (COLUMNS - 14));
+            const int lineLength = N*(COLUMNS-13);
+            int lineDiff = cache_[i].size() - next;
+            int preferred = cache_[i].size() - lineLength;
+            printf("%d %d %d\n", lineLength, lineDiff, preferred);
+            if(lineDiff > lineLength) {
+                preferred = next;
+            }
+            last = std::max(last, preferred);
         }
     }
-    if(!good) scroll_ = last;
-    if(scroll_ < 0) scroll_ = 0;
+    if(good) scroll_ = std::min(last, next);
+    Scroll(scroll_);
+
+}
+
+void Document::ScrollRight(bool byPage)
+{
+    if(byPage) ScrollLeftRight(COLUMNS - 14);
+    else ScrollLeftRight((COLUMNS - 14) * 2 / 5);
+}
+
+void Document::ScrollLeft(bool byPage)
+{
+    if(byPage) ScrollLeftRight(-(COLUMNS - 14));
+    else ScrollLeftRight(-((COLUMNS - 14) * 2 / 5));
 }
 
 void Document::Save(std::ostream& fout)

@@ -31,7 +31,7 @@ struct Note
             if(n.sharp_ == '#' || n.sharp_ == 'b') {
                 ss << n.sharp_;
             }
-            ss << n.height_;
+            if(n.name_ != '-') ss << n.height_;
         } else if(type == 'P') {
             int samp = (n.name_ - '0') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
             ss << samp;
@@ -73,15 +73,8 @@ struct Document // FIXME worry about proper encapsulation later
     void ClearSelection();
     bool IsNoteSelected(ICell* note);
 
-    void ScrollLeft(bool byPage)
-    {
-        if(byPage) {
-            scroll_ -= (COLUMNS - 14);
-        } else {
-            scroll_ -= ((COLUMNS - 14) * 2 / 5);
-        }
-        if(scroll_ < 0) scroll_ = 0;
-    }
+    void ScrollLeftRight(int);
+    void ScrollLeft(bool byPage);
     void ScrollRight(bool byPage);
 
     void UpdateCache();

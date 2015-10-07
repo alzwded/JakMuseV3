@@ -105,11 +105,7 @@ cell_t StaffInterpolation::GetRenderThing()
     ret.color = color_t::CRIMSON;
     ret.text = (char*)malloc(sizeof(char) * 1);
     ret.ntext = 1;
-    if(doc_.staves_[staffIdx_].type_ == 'P') {
-        ret.text[0] = Text()[0];
-    } else {
-        ret.text[0] = ' ';
-    }
+    ret.text[0] = Text()[0];
     return ret;
 }
 
@@ -157,17 +153,21 @@ void NoteCell::UserInput(std::string text)
     char noteName = text[0];
     text = text.substr(1);
     // expecting an optional sharp
-    if(text.empty()) return;
+    if(text.empty() && noteName != '-') return;
     char sharp = ' ';
     if(text[0] == '#' || text[1] == 'b') {
         sharp = text[0];
         text = text.substr(1);
     }
     // expecting a height
-    if(text.empty()) return;
+    printf("a\n");
+    if(text.empty() && noteName != '-') return;
+    printf("b\n");
     char height = 0;
-    if(isdigit(text[0])) {
-        height = text[0];
+    if(noteName != '-') {
+        if(isdigit(text[0])) {
+            height = text[0];
+        }
     }
 
     c.scale_ = atoi(number.c_str());
@@ -190,9 +190,13 @@ cell_t NoteCell::GetRenderThing()
         ret.type = cell_t::NOTE;
         if(noteIdx_ >= 0) {
             ret.text[3] = (noteIdx_ % 2) ? '\0' : 'T';
+            Note& n = doc_.staves_[staffIdx_].notes_[noteIdx_];
             if(doc_.staves_[staffIdx_].notes_[noteIdx_].name_ == '-') {
                 ret.color = color_t::GRAY;
-                ret.text[4] = '\0';
+                ret.text[4] = (first_) ? 'T' : '\0';
+                ret.text[0] = n.name_;
+                ret.text[1] = '0';
+                ret.text[2] = ' ';
             } else {
                 ret.color = (noteIdx_ % 2) ? color_t::YELLOW : color_t::WHITE;
                 if(first_) {
@@ -200,14 +204,13 @@ cell_t NoteCell::GetRenderThing()
                 } else {
                     ret.text[4] = '\0';
                 }
+                ret.text[0] = n.name_;
+                ret.text[1] = n.height_;
+                ret.text[2] = n.sharp_;
             }
             if(doc_.IsNoteSelected(this)) {
                 ret.color = color_t::BLUE;
             }
-            Note& n = doc_.staves_[staffIdx_].notes_[noteIdx_];
-            ret.text[0] = n.name_;
-            ret.text[1] = n.height_;
-            ret.text[2] = n.sharp_;
         } else {
             ret.color = color_t::BLACK;
             ret.text[0] = ret.text[1] = ret.text[2] = ' ';

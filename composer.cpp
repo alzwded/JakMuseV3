@@ -53,6 +53,42 @@ static enum { GFX, TXT } mode_ = GFX;
 static std::string currentText;
 static bool modified = false;
 
+static void TextStart()
+{
+    ICell* c = doc.Active();
+    if(c) currentText = c->Text();
+    else currentText = "";
+    modified = false;
+}
+
+static void TextType(char c)
+{
+    if(modified) currentText.append(&c, 1);
+    else currentText = std::string(&c, 1);
+    modified = true;
+}
+
+static void TextBackspace()
+{
+    if(currentText.empty()) return;
+    currentText = currentText.substr(0, currentText.size() - 1);
+    modified = true;
+}
+
+static void TextValidate()
+{
+    ICell* c = doc.Active();
+    if(c) {
+        c->UserInput(currentText);
+        currentText = c->Text();
+        doc.UpdateCache();
+        doc.Scroll(doc.scroll_);
+    } else {
+        currentText = "";
+    }
+    modified = false;
+}
+
 static void handleResize(int w, int h)
 {
 	glViewport(0, 0, w, h);
@@ -115,7 +151,6 @@ static void MovementFunc(mfunc_t mfunc, bool select)
     ICell* c = doc.Cell((doc.Active()->*mfunc)());
     if(!select) c = doc.Cell(c->Mark());
     c = doc.Cell(c->Select());
-    glutPostRedisplay();
 }
 
 static void handleSpecialRelease(int key, int x, int y)
@@ -134,13 +169,13 @@ static void handleSpecialRelease(int key, int x, int y)
         {
             doc.ScrollLeft(false);
             doc.Active()->Select();
-            glutPostRedisplay();
         } else if(modifiers & GLUT_ACTIVE_CTRL) {
             doc.ScrollLeft(false);
-            glutPostRedisplay();
         } else {
             MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
         }
+        TextStart();
+        glutPostRedisplay();
         break;
     case GLUT_KEY_RIGHT:
         modifiers = glutGetModifiers();
@@ -150,13 +185,13 @@ static void handleSpecialRelease(int key, int x, int y)
         {
             doc.ScrollRight(false);
             doc.Active()->Select();
-            glutPostRedisplay();
         } else if(modifiers & GLUT_ACTIVE_CTRL) {
             doc.ScrollRight(false);
-            glutPostRedisplay();
         } else {
             MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
         }
+        TextStart();
+        glutPostRedisplay();
         break;
     case GLUT_KEY_UP:
         modifiers = glutGetModifiers();
@@ -168,6 +203,8 @@ static void handleSpecialRelease(int key, int x, int y)
         } else {
             MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
         }
+        TextStart();
+        glutPostRedisplay();
         break;
     case GLUT_KEY_DOWN:
         modifiers = glutGetModifiers();
@@ -179,6 +216,8 @@ static void handleSpecialRelease(int key, int x, int y)
         } else {
             MovementFunc(mfunc, modifiers & GLUT_ACTIVE_SHIFT);
         }
+        TextStart();
+        glutPostRedisplay();
         break;
     case GLUT_KEY_PAGE_UP:
         modifiers = glutGetModifiers();
@@ -188,6 +227,7 @@ static void handleSpecialRelease(int key, int x, int y)
         } else {
             doc.ScrollLeft(true);
         }
+        TextStart();
         glutPostRedisplay();
         break;
     case GLUT_KEY_PAGE_DOWN:
@@ -198,6 +238,7 @@ static void handleSpecialRelease(int key, int x, int y)
         } else {
             doc.ScrollRight(true);
         }
+        TextStart();
         glutPostRedisplay();
         break;
     // idem right, idem pg up, idem pg dwn; similar up, similar down w/o ctrl
@@ -226,13 +267,17 @@ static void handleKeyRelease(unsigned char key, int x, int y)
     //if(onkeyup) onkeyup(key);
     switch(key) {
     case 27:
-        // cancel anything that was going on
+        TextStart();
+        glutPostRedisplay();
         break;
     case 10:
     case 13:
         // document.cells(x, y).UserInput(currentText);
         // currentText = document.cells(x, y).Text();
         // inEdit = false;
+        TextValidate();
+        glutPostRedisplay();
+        break;
     case 9: // tab
         switch(doc.insertMode_)
         {
@@ -249,10 +294,16 @@ static void handleKeyRelease(unsigned char key, int x, int y)
         glutPostRedisplay();
         break;
     case 8: // bkspc
+        TextBackspace();
+        glutPostRedisplay();
         break;
     case GLUT_KEY_DELETE:
         break;
     default:
+        if(isgraph(key) || isprint(key) || isspace(key)) {
+            TextType(key);
+            glutPostRedisplay();
+        }
         // inEdit = true;
         // if backspace currentText = currentText.substr(0, size() - 1);
         // else currentText.append(key);
@@ -374,6 +425,7 @@ void DrawGraphical(int i, int j, int offset, color_t bg, int baseHeight, char mu
         } glEnd();
     }
 
+    SetForegroundColor(bg);
     int nOff = 20.5f;
     glPushMatrix();
     glLineWidth(0.5);
@@ -466,8 +518,8 @@ static gfx ToGfx(cell_t c)
     case 'A': ret.base = 9; break;
     case 'B': ret.base = 10; break;
     case 'H': ret.base = 11; break;
-    case '-': ret.base = -64; ret.mult = ' '; return ret; // XXX
-    default: ret.base = -64; ret.mult = ' '; return ret; // XXX
+    case '-': ret.base = -63; ret.mult = '0'; return ret; // XXX
+    default: ret.base = -64; ret.mult = '0'; return ret; // XXX
     }
     switch(c.text[2]) {
     case ' ':
@@ -535,6 +587,10 @@ static void drawSomething()
             });
     NoteCell* noteCell = dynamic_cast<NoteCell*>(*found);
     if(noteCell) {
+        while(!noteCell->First()) {
+            noteCell = dynamic_cast<NoteCell*>(doc.Cell(noteCell->Location().x - 1, noteCell->Location().y));
+            assert(noteCell);
+        }
         assert(noteCell->First());
         point_t pos = noteCell->Location();
         cell_t c = noteCell->GetRenderThing();
@@ -649,6 +705,7 @@ int main(int argc, char* argv[])
 
     doc.UpdateCache();
     doc.InitCells();
+    if(doc.Active()) currentText = doc.Active()->Text();
 
     // set up ortho 2d
     glMatrixMode(GL_PROJECTION);
