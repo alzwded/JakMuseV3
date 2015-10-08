@@ -19,46 +19,7 @@ Document::Document()
     title_ = "My new song";
     active_.x = 13 * N;
     active_.y = 1;
-    // BEGIN TEST CODE
-    Note n = { 12, 'C', ' ', '4' };
-    staves_[1].notes_.push_back(n);
-    staves_[0].notes_.push_back(n);
-    staves_[0].notes_.push_back(n);
-    n.sharp_ = '#';
-    staves_[0].notes_.push_back(n);
-    n.sharp_ = 'b';
-    staves_[0].notes_.push_back(n);
-    staves_[0].name_ = "I1";
-    staves_[1].name_ = "I2";
-    n.scale_ = 18;
-    n.sharp_ = ' ';
-    staves_[2].notes_.push_back(n);
-    n.scale_ = 12;
-    staves_[2].notes_.push_back(n);
-    n.scale_ = 6;
-    staves_[2].notes_.push_back(n);
-    n.name_ = '-';
-    staves_[2].notes_.push_back(n);
-    staves_[2].name_ = "I3";
-    staves_[3].name_ = "PCM";
-    staves_[3].type_ = 'P';
-    n.scale_ = 18;
-    n.name_ = '0';
-    n.height_ = '1';
-    n.sharp_ = '6';
-    staves_[3].notes_.push_back(n);
-    n.name_ = '1';
-    n.height_ = '2';
-    n.sharp_ = '8';
-    staves_[3].notes_.push_back(n);
-    n.scale_ = 6;
-    staves_[3].notes_.push_back(n);
-    staves_[3].notes_.push_back(n);
-
-    marked_ = point_t(0, 2);
-    selected_ = point_t(1, 3);
-    active_ = point_t(13 * N, 3);
-    // END TEST CODE
+    selected_ = marked_ = point_t(0, 0);
 }
 
 ICell* Document::Cell(point_t p)
@@ -421,9 +382,11 @@ void Document::SetActiveToMarked()
             });
 
     if(!(pos >= scroll_ && pos < scroll_ + N*(COLUMNS - 13))) {
+        scroll_ = pos;
         Scroll(pos);
         ScrollLeftRight(0);
     }
+    UpdateCache();
     printf("P %d\n", pos);
 
     auto&& cache = cache_;
@@ -432,6 +395,7 @@ void Document::SetActiveToMarked()
             [staffIdx, pos, cache](ICell* c) -> bool {
                 NoteCell* nc = dynamic_cast<NoteCell*>(c);
                 if(!nc) return false;
+                //printf("   a note: s%d ci%d\n", nc->Staff(), nc->CacheIndex());
                 return (nc->Staff() == staffIdx)
                     && nc->CacheIndex() == pos;
                     //&& nc->CacheIndex() >= 0 && nc->CacheIndex() < cache[staffIdx].size()

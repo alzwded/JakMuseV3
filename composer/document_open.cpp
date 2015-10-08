@@ -229,8 +229,8 @@ void Document::Open(std::istream& fin)
         free(prev);
     }
 
-    marked_ = point_t(0, 0);
-    selected_ = point_t(0, 0);
+    if(staves_[0].notes_.size()) selected_ = marked_ = point_t(0, 0);
+    else selected_ = marked_ = point_t(-1, -1);
     active_ = point_t(13 * N, 1);
     UpdateCache();
     Scroll(0);

@@ -148,8 +148,12 @@ static void handleMouse(int button, int state, int X, int Y)
             glutPostRedisplay();
             break;
         case GLUT_MIDDLE_BUTTON:
-            // document.Copy();
-            // document.cells(x, y).Paste();
+            doc.PushState();
+            doc.Copy();
+            doc.Cell(x, y)->Mark();
+            doc.Cell(x, y)->Select();
+            doc.Paste();
+            TextStart();
             break;
         }
         break;

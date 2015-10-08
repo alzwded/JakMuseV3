@@ -162,18 +162,18 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
         return true;
     }
 
-    if(std::all_of(&stext[0], &stext[stext.size() - 1], isdigit)) {
-        LOG("NUMBER");
-        AssignString(text.str(), sToken);
-        hTokenId = NUMBER;
-        return true;
-    }
-
     Note n;
     if(TryParseNote(stext.c_str(), &n)) {
         LOG("NOTE");
         AssignString(text.str(), sToken);
         hTokenId = NOTE;
+        return true;
+    }
+
+    if(std::all_of(&stext[0], &stext[stext.size() - 1], isdigit)) {
+        LOG("NUMBER");
+        AssignString(text.str(), sToken);
+        hTokenId = NUMBER;
         return true;
     }
 
