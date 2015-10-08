@@ -321,7 +321,98 @@ void Document::Copy()
 
 void Document::Paste()
 {
-    throw 1;
+    switch(insertMode_)
+    {
+    case InsertMode_t::INSERT:
+        {
+            point_t pos = marked_;
+            int staffIdx = Active()->Location().y - 1;
+            if(pos.y >= 0) staffIdx = pos.y;
+            if(staffIdx < 0) return;
+
+            if(marked_.x < 0) pos = point_t(0, staffIdx);
+
+            for(size_t i = 0; i < buffer_.size(); ++i) {
+                if(staffIdx + i >= staves_.size());
+                Staff& s = staves_[staffIdx + i];
+                decltype(s.notes_)::iterator it;
+                if(marked_.x >= 0 && marked_.x < s.notes_.size()) it = s.notes_.begin() + marked_.x;
+                else { it = s.notes_.begin(); }
+
+                for(size_t j = 0; j < buffer_[i].size(); ++j) {
+                    it = s.notes_.insert(it, buffer_[i][j]);
+                    ++it;
+                }
+            }
+
+            ClearSelection();
+            marked_ = pos;
+            selected_ = pos;
+            UpdateCache();
+            ScrollLeftRight(0);
+            SetActiveToMarked();
+            ScrollLeftRight(0);
+        }
+        break;
+    case InsertMode_t::APPEND:
+        {
+            point_t pos = { std::max(marked_.x, selected_.x), std::max(marked_.y, selected_.y) };
+            pos.x++;
+            int staffIdx = Active()->Location().y - 1;
+            if(pos.y >= 0) staffIdx = pos.y;
+            if(staffIdx < 0) return;
+
+            if(marked_.x < 0) pos = point_t(staves_[staffIdx].notes_.size(), staffIdx);
+
+            for(size_t i = 0; i < buffer_.size(); ++i) {
+                if(staffIdx + i >= staves_.size());
+                Staff& s = staves_[staffIdx + i];
+                decltype(s.notes_)::iterator it;
+                if(marked_.x >= 0 && marked_.x < s.notes_.size() - 1) it = s.notes_.begin() + marked_.x + 1;
+                else { it = s.notes_.end(); }
+
+                for(size_t j = 0; j < buffer_[i].size(); ++j) {
+                    it = s.notes_.insert(it, buffer_[i][j]);
+                    ++it;
+                }
+            }
+
+            ClearSelection();
+            marked_ = pos;
+            selected_ = pos;
+            UpdateCache();
+            ScrollLeftRight(0);
+            SetActiveToMarked();
+            ScrollLeftRight(0);
+        }
+        break;
+    case InsertMode_t::REPLACE:
+        {
+            if(marked_.x < 0 || marked_.y < 0) return;
+            point_t pos = marked_;
+            printf("%d %d %d %d\n", marked_.x, marked_.y, selected_.y, selected_.y);
+            if(selected_.x >= 0 && selected_.y >= 0) {
+                pos.x = std::min(selected_.x, pos.x);
+                pos.y = std::min(selected_.y, pos.y);
+            }
+            BufferOp op = PreCutSelection();
+            op.cut();
+            printf("%d %d ==\n", pos.x, pos.y);
+            marked_ = pos;
+            selected_ = pos;
+            insertMode_ = InsertMode_t::INSERT;
+            Paste();
+            insertMode_ = InsertMode_t::REPLACE;
+            ClearSelection();
+            marked_ = pos;
+            selected_ = pos;
+            UpdateCache();
+            ScrollLeftRight(0);
+            SetActiveToMarked();
+            ScrollLeftRight(0);
+        }
+        break;
+    }
 }
 
 void Document::SetActiveToMarked()
@@ -376,6 +467,7 @@ void Document::NewNote()
         {
             point_t pos = marked_;
             int staffIdx = Active()->Location().y - 1;
+            if(pos.y >= 0) staffIdx = pos.y;
             if(staffIdx < 0) return;
             Staff& s = staves_[staffIdx];
             decltype(s.notes_)::iterator it;
@@ -401,6 +493,7 @@ void Document::NewNote()
             point_t pos = { std::max(marked_.x, selected_.x), std::max(marked_.y, selected_.y) };
             pos.x++;
             int staffIdx = Active()->Location().y - 1;
+            if(pos.y >= 0) staffIdx = pos.y;
             if(staffIdx < 0) return;
             Staff& s = staves_[staffIdx];
             decltype(s.notes_)::iterator it;
