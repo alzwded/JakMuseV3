@@ -22,8 +22,8 @@ Roadmap
 
 - specs (more or less done)
 - composer
-  + GUI (in progress)
-  + back-end
+  + GUI (ready)
+  + back-end (ready)
 - instrument & score parser (i.e. the I or I/O)
 - synthesizer
   + blocks...
