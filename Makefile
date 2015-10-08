@@ -15,8 +15,10 @@ composer.exe: $(OBJS) freeglut.dll
 freeglut.dll:
 	copy $(GLUTROOT)\bin\freeglut.dll .
 
-parser.cpp: vendor\lemon\lemon.exe parser.lem
-	vendor\lemon\lemon.exe parser.lem
+parser.cpp: vendor\lemon\lemon.exe parser.y
+	vendor\lemon\lemon.exe parser.y
+	if EXIST parser.cpp del parser.cpp
+	ren parser.c parser.cpp
 
 {}.cpp{}.obj::
 	$(CC) $(CFLAGS) $<
@@ -25,4 +27,4 @@ vendor\lemon\lemon.exe: vendor\lemon\lemon.c vendor\lemon\lempar.c
 	$(CC) /Fe:vendor\lemon\lemon.exe vendor\lemon\lemon.c
 
 clean:
-	del /s *.obj composer.exe vendor\lemon\lemon.exe
+	del /s *.obj composer.exe vendor\lemon\lemon.exe parser.cpp parser.out parser.h

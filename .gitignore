@@ -33,3 +33,6 @@
 *.ilk
 
 freeglut
+parser.out
+parser.cpp
+parser.h
