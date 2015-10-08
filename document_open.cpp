@@ -180,6 +180,24 @@ void Document::Open(std::istream& fin)
                 [&name](Staff& s) -> bool {
                     return s.name_.compare(name) == 0;
                 });
+        if(found != staves_.end() && staffIdx >= ROWS - 2) {
+            // not enough space on screen, ignore
+            fprintf(stderr, "IGNORING STAFF %s\n", name.c_str());
+            PpParamList* p = ppstaff.params;
+            while(p) {
+                PpParam kv = p->value;
+                free(kv.key);
+                PpValue_free(kv.value);
+                PpParamList* prev = p;
+                p = p->next;
+                free(prev);
+            }
+            
+            PpStaffList* prev = fileHead;
+            fileHead = fileHead->next;
+            free(prev);
+            continue;
+        }
         Staff& staff = (found != staves_.end()) ? *found : staves_[++staffIdx];
         printf("idx: %d\n", staffIdx);
         printf("  %s\n", name.c_str());
