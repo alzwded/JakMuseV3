@@ -33,4 +33,4 @@ vendor\lemon\lemon.exe: vendor\lemon\lemon.c vendor\lemon\lempar.c
 	$(CC) /Fe:vendor\lemon\lemon.exe vendor\lemon\lemon.c
 
 clean:
-	del /s *.obj composer.exe vendor\lemon\lemon.exe parser.cpp parser.out parser.h
+	del /q *.obj composer.exe vendor\lemon\lemon.exe parser.cpp parser.out parser.h .\freeglut.dll *.ilk *.pdb
