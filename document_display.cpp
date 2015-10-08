@@ -5,6 +5,8 @@
 #include <numeric>
 #include <assert.h>
 
+extern bool TryParseNote(const char*, Note*);
+
 cell_t TitleCell::GetRenderThing()
 {
     cell_t ret;
@@ -127,52 +129,7 @@ void NoteCell::UserInput(std::string text)
     Note& c = doc_.staves_[staffIdx_].notes_[noteIdx_];
 
     if(doc_.staves_[staffIdx_].type_ == 'N') {
-        if(text.empty()) {
-            c.scale_ = 1;
-            c.name_ = '-';
-            c.sharp_ = ' ';
-            c.height_ = ' ';
-        }
-        bool valid = true;
-        // expecting a number
-        std::string number;
-        for(size_t i = 0; i < text.size(); ++i) {
-            if(isdigit(text[i])) {
-                number.append(std::string(1, text[i]));
-            } else {
-                break;
-            }
-        }
-        if(number.empty()) { return; }
-        text = text.substr(number.size());
-        // expecting a note name
-        if(text.empty()) return;
-        static const char noteNames[] = "ABCDEFGH-";
-        if(!strchr(noteNames, text[0])) {
-            return;
-        }
-        char noteName = text[0];
-        text = text.substr(1);
-        // expecting an optional sharp
-        if(text.empty() && noteName != '-') return;
-        char sharp = ' ';
-        if(text[0] == '#' || text[0] == 'b') {
-            sharp = text[0];
-            text = text.substr(1);
-        }
-        // expecting a height
-        if(text.empty() && noteName != '-') return;
-        char height = 0;
-        if(noteName != '-') {
-            if(isdigit(text[0])) {
-                height = text[0];
-            }
-        }
-
-        c.scale_ = atoi(number.c_str());
-        c.name_ = noteName;
-        c.sharp_ = sharp;
-        c.height_ = height;
+        (void) TryParseNote(text.c_str(), &c);
     } else {
         std::stringstream s;
         s << text;

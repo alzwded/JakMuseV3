@@ -7,13 +7,19 @@ LIBS = freeglut.lib
 
 .SUFFIXES:.cpp .hpp .h .obj
 
-OBJS = composer.obj document.obj document_display.obj
+OBJS = composer.obj document.obj document_display.obj tokenizer.obj document_open.obj parser.obj
 
 composer.exe: $(OBJS) freeglut.dll
 	$(LD) $(LDOPTS) $(OBJS) $(LIBS)
 
 freeglut.dll:
 	copy $(GLUTROOT)\bin\freeglut.dll .
+
+document_open.cpp: parser.h
+
+tokenizer.cpp: parser.h
+
+parser.h: parser.cpp
 
 parser.cpp: vendor\lemon\lemon.exe parser.y
 	vendor\lemon\lemon.exe parser.y

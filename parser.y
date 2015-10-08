@@ -2,45 +2,22 @@
 %include {
     #include <assert.h>
     #include "document.h"
+    #include "parser_types.h"
 
-    extern bool TryParseNote(char*, Note*);
+    extern bool TryParseNote(const char*, Note*);
 }
-%include {
-    struct PpValueList;
-    struct PpValue {
-        enum { PpSTRING, PpNUMBER, PpLIST, PpNOTE } type;
-        union {
-            char* str;
-            int num;
-            PpValueList* list;
-            Note note;
-        };
-    };
-    struct PpParam {
-        char* key;
-        PpValue value;
-    };
-    struct PpParamList {
-        PpParamList* next;
-        PpParam value;
-    };
-    struct PpValueList {
-        PpValueList* next;
-        PpValue value;
-    };
-    struct PpStaff {
-        char* name;
-        char type;
-        PpParamList* params;
-    };
-    struct PpStaffList {
-        PpStaffList* next;
-        PpStaff value;
-    };
+
+%extra_argument { PpStaffList** FileHead }
+%parse_accept {
+    fprintf(stderr, "Successfully parsed file.\n");
 }
+%parse_failure {
+    fprintf(stderr, "Syntax error somewhere\n");
+    *FileHead = NULL;
+}
+
 %token_type { char* }
 
-%type file { PpStaffList* }
 %type staff_list { PpStaffList* }
 %type staff { PpStaff }
 %type type { char }
@@ -55,15 +32,18 @@
 
 %start_symbol file
 
-file(R) ::= staff_list(val). {
-    R = val;
+file ::= staff_list(val). {
+    *FileHead = val;
 }
 file(R) ::= . {
     R = NULL;
 }
 
-staff_list(R) ::= staff. {
-    R = NULL;
+staff_list(R) ::= staff(curr). {
+    PpStaffList* next = (PpStaffList*)malloc(sizeof(PpStaffList));
+    next->next = NULL;
+    next->value = curr;
+    R = next;
 }
 staff_list(R) ::= staff_list(head) staff(curr). {
     PpStaffList* next = (PpStaffList*)malloc(sizeof(PpStaffList));

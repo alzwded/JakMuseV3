@@ -2,6 +2,7 @@
 #define DOCUMENT_H
 
 #include "common.h"
+#include "note.h"
 #include <vector>
 #include <list>
 #include <sstream>
@@ -15,32 +16,6 @@ enum class InsertMode_t
     INSERT,
     APPEND,
     REPLACE
-};
-
-struct Note
-{
-    int scale_;
-    char name_;
-    char sharp_;
-    char height_;
-
-    std::string BuildString(char type)
-    {
-        std::stringstream ss;
-        Note& n = *this;
-        if(type == 'N') {
-            ss << n.scale_ << n.name_; 
-            if(n.sharp_ == '#' || n.sharp_ == 'b') {
-                ss << n.sharp_;
-            }
-            if(n.name_ != '-') ss << n.height_;
-        } else if(type == 'P') {
-            int scale = n.scale_;
-            int samp = (n.name_ - '0') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
-            ss << scale << " " << samp;
-        }
-        return ss.str();
-    }
 };
 
 struct Staff

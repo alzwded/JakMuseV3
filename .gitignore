@@ -36,3 +36,5 @@ freeglut
 parser.out
 parser.cpp
 parser.h
+log
+*.log

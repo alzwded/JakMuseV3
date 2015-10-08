@@ -263,11 +263,6 @@ void Document::Save(std::ostream& fout)
     }
 }
 
-void Document::Open(std::istream& fin)
-{
-    throw 1;
-}
-
 void Document::SetActive(ICell* c)
 {
     active_ = c->Location();
@@ -743,4 +738,22 @@ void Document::PopState()
     undoStates_.pop_back();
     UpdateCache();
     ScrollLeftRight(0);
+}
+
+std::string Note::BuildString(char type)
+{
+    std::stringstream ss;
+    Note& n = *this;
+    if(type == 'N') {
+        ss << n.scale_ << n.name_; 
+        if(n.sharp_ == '#' || n.sharp_ == 'b') {
+            ss << n.sharp_;
+        }
+        if(n.name_ != '-') ss << n.height_;
+    } else if(type == 'P') {
+        int scale = n.scale_;
+        int samp = (n.name_ - '0') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
+        ss << scale << " " << samp;
+    }
+    return ss.str();
 }

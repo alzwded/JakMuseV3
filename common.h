@@ -32,5 +32,4 @@ struct point_t {
     point_t(int X, int Y) : x(X), y(Y) {}
 };
 
-
 #endif
