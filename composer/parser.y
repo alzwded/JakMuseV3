@@ -1,7 +1,7 @@
 
 %include {
     #include <assert.h>
-    #include "document.h"
+    #include "note.h"
     #include "parser_types.h"
 
     extern bool TryParseNote(const char*, Note*);

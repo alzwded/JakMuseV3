@@ -138,6 +138,7 @@ void NoteCell::UserInput(std::string text)
         if(s1.empty() || s2.empty()) return;
         int scale = atoi(s1.c_str());
         while(s2.size() < 3) s2 = '0' + s2;
+        if(atoi(s2.c_str()) > 255) return;
         c.scale_ = scale;
         c.name_ = s2[0];
         c.height_ = s2[1];
