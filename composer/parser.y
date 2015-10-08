@@ -107,12 +107,14 @@ value(R) ::= NUMBER(val). {
     PpValue ret;
     ret.type = PpValue::PpNUMBER;
     ret.num = num;
+    free(val);
     R = ret;
 }
 value(R) ::= NOTE(val). {
     PpValue ret;
     ret.type = PpValue::PpNOTE;
     (void) TryParseNote(val, &ret.note);
+    free(val);
     R = ret;
 }
 value(R) ::= STRING(val). {

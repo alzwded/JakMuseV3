@@ -99,9 +99,6 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             if(text.str().empty()) {
                 LOG("LSQUARE");
                 hTokenId = LSQUARE;
-                sToken = (char*)malloc(sizeof(char) * 2);
-                sToken[0] = '[';
-                sToken[1] = '\0';
                 (void) fin.get();
                 return true;
             } else {
@@ -111,9 +108,6 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             if(text.str().empty()) {
                 LOG("RSQUARE");
                 hTokenId = RSQUARE;
-                sToken = (char*)malloc(sizeof(char) * 2);
-                sToken[0] = ']';
-                sToken[1] = '\0';
                 (void) fin.get();
                 return true;
             } else {
@@ -123,21 +117,15 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             if(text.str().empty()) {
                 LOG("LCURLY");
                 hTokenId = LCURLY;
-                sToken = (char*)malloc(sizeof(char) * 2);
-                sToken[0] = '{';
-                sToken[1] = '\0';
                 (void) fin.get();
                 return true;
             } else {
                 break;
             }
         } else if(c == '}') {
-            if(text.str().empty()) { // if you notice I overuse stringstream::str too much in a loop, shut up; stringstream doesn't have empty for some reason
+            if(text.str().empty()) { // if you notice I overuse stringstream::str too much in a loop, shut up; stringstream doesn't have empty for some reason and I'm too lazy to refactor
                 LOG("RCURLY");
                 hTokenId = RCURLY;
-                sToken = (char*)malloc(sizeof(char) * 2);
-                sToken[0] = '}';
-                sToken[1] = '\0';
                 (void) fin.get();
                 return true;
             } else {
@@ -147,9 +135,6 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             if(text.str().empty()) {
                 LOG("EQUALS");
                 hTokenId = EQUALS;
-                sToken = (char*)malloc(sizeof(char) * 2);
-                sToken[0] = '=';
-                sToken[1] = '\0';
                 (void) fin.get();
                 return true;
             } else {
@@ -164,7 +149,6 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
     if(text.str().empty()) return false;
     std::string stext = text.str();
-    AssignString(text.str(), sToken);
 
     if(stext.compare("NOTES") == 0) {
         LOG("NOTES");
@@ -180,6 +164,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
     if(std::all_of(&stext[0], &stext[stext.size() - 1], isdigit)) {
         LOG("NUMBER");
+        AssignString(text.str(), sToken);
         hTokenId = NUMBER;
         return true;
     }
@@ -187,11 +172,12 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
     Note n;
     if(TryParseNote(stext.c_str(), &n)) {
         LOG("NOTE");
+        AssignString(text.str(), sToken);
         hTokenId = NOTE;
-        AssignString(stext, sToken);
         return true;
     }
 
+    AssignString(text.str(), sToken);
     LOG("STRING");
     hTokenId = STRING;
     return true;
