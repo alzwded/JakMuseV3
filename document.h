@@ -81,6 +81,7 @@ struct Document // FIXME worry about proper encapsulation later
 
     ICell* Active() { return Cell(active_); }
     void SetActive(ICell* c);
+    void SetActiveToMarked();
     void SetMarked(ICell* c);
     void SetSelected(ICell* c);
     void ClearSelection();

@@ -324,9 +324,128 @@ void Document::Paste()
     throw 1;
 }
 
+void Document::SetActiveToMarked()
+{
+    if(marked_.x < 0 || marked_.y < 0) { printf("no marked\n"); return; }
+    Staff& s = staves_[marked_.y];
+    int pos = 0;
+    pos = std::accumulate(s.notes_.begin(), s.notes_.begin() + marked_.x, pos,
+            [](int pos, decltype(s.notes_)::const_reference n) -> int {
+                return pos + n.scale_;
+            });
+
+    if(!(pos >= scroll_ && pos < scroll_ + N*(COLUMNS - 13))) {
+        Scroll(pos);
+        ScrollLeftRight(0);
+    }
+    printf("P %d\n", pos);
+
+    auto&& cache = cache_;
+    int staffIdx = marked_.y;
+    auto&& found = std::find_if(cells_.begin(), cells_.end(),
+            [staffIdx, pos, cache](ICell* c) -> bool {
+                NoteCell* nc = dynamic_cast<NoteCell*>(c);
+                if(!nc) return false;
+                return (nc->Staff() == staffIdx)
+                    && nc->CacheIndex() == pos;
+                    //&& nc->CacheIndex() >= 0 && nc->CacheIndex() < cache[staffIdx].size()
+                    //&& cache[staffIdx][nc->CacheIndex()] == pos;
+            });
+    if(found == cells_.end()) {
+        printf("nothin fuond\n");
+        return;
+    }
+    NoteCell* nc = dynamic_cast<NoteCell*>(*found);
+    if(!nc) return;
+
+    while(!nc->First()) {
+        printf("moving left\n");
+        nc = dynamic_cast<NoteCell*>(Cell(nc->Location().x - 1, nc->Location().y));
+    }
+
+    active_ = nc->Location();
+}
+
 void Document::NewNote()
 {
-    throw 1;
+    Note n = { 12, '-', ' ', ' ' };
+    Note p = { 12, '1', '8', '2' };
+    switch(insertMode_)
+    {
+    case InsertMode_t::INSERT:
+        {
+            point_t pos = marked_;
+            int staffIdx = Active()->Location().y - 1;
+            if(staffIdx < 0) return;
+            Staff& s = staves_[staffIdx];
+            decltype(s.notes_)::iterator it;
+            if(marked_.x >= 0) it = s.notes_.begin() + marked_.x;
+            else {
+                it = s.notes_.begin();
+                pos = point_t(0, staffIdx);
+            }
+            printf("%d %d\n", marked_.x, it - s.notes_.begin());
+            if(s.type_ == 'P') n = p;
+            s.notes_.insert(it, n);
+            ClearSelection();
+            marked_ = pos;
+            selected_ = pos;
+            UpdateCache();
+            ScrollLeftRight(0);
+            SetActiveToMarked();
+            ScrollLeftRight(0);
+        }
+        break;
+    case InsertMode_t::APPEND:
+        {
+            point_t pos = { std::max(marked_.x, selected_.x), std::max(marked_.y, selected_.y) };
+            pos.x++;
+            int staffIdx = Active()->Location().y - 1;
+            if(staffIdx < 0) return;
+            Staff& s = staves_[staffIdx];
+            decltype(s.notes_)::iterator it;
+            if(marked_.x >= 0) it = s.notes_.begin() + marked_.x;
+            else {
+                it = s.notes_.end();
+                pos = point_t(s.notes_.size(), staffIdx);
+            }
+            if(it != s.notes_.end()) ++it;
+            if(s.type_ == 'P') n = p;
+            s.notes_.insert(it, n);
+            ClearSelection();
+            marked_ = pos;
+            selected_ = pos;
+            UpdateCache();
+            ScrollLeftRight(0);
+            SetActiveToMarked();
+            ScrollLeftRight(0);
+        }
+        break;
+    case InsertMode_t::REPLACE:
+        {
+            if(marked_.x < 0 || marked_.y < 0) return;
+            point_t pos = marked_;
+            if(selected_.x >= 0 && selected_.y >= 0) {
+                pos.x = std::min(selected_.x, pos.x);
+                pos.y = std::min(selected_.y, pos.y);
+            }
+            BufferOp op = PreCutSelection();
+            op.cut();
+            marked_ = pos;
+            selected_ = pos;
+            insertMode_ = InsertMode_t::INSERT;
+            NewNote();
+            insertMode_ = InsertMode_t::REPLACE;
+            ClearSelection();
+            marked_ = pos;
+            selected_ = pos;
+            UpdateCache();
+            ScrollLeftRight(0);
+            SetActiveToMarked();
+            ScrollLeftRight(0);
+        }
+        break;
+    }
 }
 
 Document::BufferOp Document::PreCutSelection()
@@ -462,6 +581,9 @@ bool Document::GetSelectionBox(int& left, int& right, int& top, int& bottom)
     right = selected_.x;
     top = marked_.y;
     bottom = selected_.y;
+
+    if(right < 0) right = left;
+    if(bottom < 0) bottom = top;
 
     if(left < 0 || right < 0 || top < 0 || bottom < 0) return false;
 

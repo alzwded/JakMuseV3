@@ -176,7 +176,7 @@ static void handleSpecialRelease(int key, int x, int y)
     int modifiers = 0;
     int mask = 0;
     mfunc_t mfunc = nullptr;
-    printf("%2X %2X p\n", key, modifiers);
+    //printf("%2X %2X p\n", key, modifiers);
     switch(key) {
     case GLUT_KEY_LEFT:
         modifiers = glutGetModifiers();
@@ -289,6 +289,21 @@ static void handleSpecialRelease(int key, int x, int y)
         break;
     case GLUT_KEY_F10:
         doc.PopState();
+        glutPostRedisplay();
+        break;
+    case GLUT_KEY_INSERT:
+        modifiers = glutGetModifiers();
+        if(modifiers & GLUT_ACTIVE_SHIFT) {
+            doc.PushState();
+            doc.Paste();
+            TextStart();
+        } else if(modifiers & GLUT_ACTIVE_CTRL) {
+            doc.Copy();
+        } else {
+            doc.PushState();
+            doc.NewNote();
+            TextStart();
+        }
         glutPostRedisplay();
         break;
     case GLUT_KEY_F12:
