@@ -477,22 +477,22 @@ SECTION INSTANCES
 # O is global output
 # declares instances of generators, filters, inputs, etc
 # this sets their parameters
-    F1 = new Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4}
-    F2 = new Filter{A=100,D=100,S=0.5,R=100,ResetADSR=0,Low=22050,High=300,K=0.8}
-    WT1 = new WaveTable{Interpolation=Truncate,Data=[1,-1]}
-    G1 = new Generator{WT=WT1,Glide=1}
-    I1 = new Input{}
-    F3 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.02}
-    WT2 = new WaveTable{Interpolation=Cosine,Data=[0,1,0,-1]}
-    G2 = new Generator{WT=WT2,Glide=0}
-    F4 = new Filter{A=100,D=100,S=0.8,R=30,Low=22050,High=1,K=0.3}
-    G3 = new Generator{WT=WT2,Glide=1}
-    I2 = new Input{}
-    F5 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.01}
-    G4 = new Generator{WT=WT2,Glide=0}
-    K1 = new Constant{Value=5}
-    K2 = new Constant{Value=20}
-    N0 = new Noise{Type=0}
+    F1 Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4}
+    F2 Filter{A=100,D=100,S=0.5,R=100,ResetADSR=0,Low=22050,High=300,K=0.8}
+    WT1 WaveTable{Interpolation=Truncate,Data=[1,-1]}
+    G1 Generator{WT=WT1,Glide=1}
+    I1 Input{}
+    F3 Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.02}
+    WT2 WaveTable{Interpolation=Cosine,Data=[0,1,0,-1]}
+    G2 Generator{WT=WT2,Glide=0}
+    F4 Filter{A=100,D=100,S=0.8,R=30,Low=22050,High=1,K=0.3}
+    G3 Generator{WT=WT2,Glide=1}
+    I2 Input{}
+    F5 Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.01}
+    G4 Generator{WT=WT2,Glide=0}
+    K1 Constant{Value=5}
+    K2 Constant{Value=20}
+    N0 Noise{Type=0}
 END SECTION
 
 SECTION INPUT CONNECTIONS
@@ -850,28 +850,28 @@ SECTION INSTANCES
 # O is global output
 # declares instances of generators, filters, inputs, etc
 # this sets their parameters
-    F1 = new Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4,IN=[F2,F3],RST=I1}
-    F2 = new Filter{A=100,D=100,S=0.5,R=100,ResetADSR=0,Low=22050,High=300,K=0.8,IN=[G1],RST=I1}
-    WT1 = new WaveTable{Interpolation=Truncate,Data=[1,-1]}
-    G1 = new Generator{WT=WT1,Glide=1,IN=[I1],RST=[I1]}
-    I1 = new Input{}
-    F3 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.02,IN=[G2],RST=I1}
-    WT2 = new WaveTable{Interpolation=Cosine,Data=[0,1,0,-1]}
-    G2 = new Generator{WT=WT2,Glide=0,IN=[K1],RST=I1}
-    F4 = new Filter{A=100,D=100,S=0.8,R=30,Low=22050,High=1,K=0.3,IN=[G3],RST=I2}
-    G3 = new Generator{WT=WT2,Glide=1,IN=[F5,I2],RST=I2}
-    I2 = new Input{}
-    F5 = new Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.01,IN=[G4]}
-    G4 = new Generator{WT=WT2,Glide=0,IN=[K2],RST=I2}
-    K1 = new Constant{Value=5}
-    K2 = new Constant{Value=20}
-    N0 = new Noise{Type=0,IN=[I3],RST=I3}
+    F1 Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4,IN=[F2,F3],RST=I1}
+    F2 Filter{A=100,D=100,S=0.5,R=100,ResetADSR=0,Low=22050,High=300,K=0.8,IN=[G1],RST=I1}
+    WT1 WaveTable{Interpolation=Truncate,Data=[1,-1]}
+    G1 Generator{WT=WT1,Glide=1,IN=[I1],RST=[I1]}
+    I1 Input{}
+    F3 Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.02,IN=[G2],RST=I1}
+    WT2 WaveTable{Interpolation=Cosine,Data=[0,1,0,-1]}
+    G2 Generator{WT=WT2,Glide=0,IN=[K1],RST=I1}
+    F4 Filter{A=100,D=100,S=0.8,R=30,Low=22050,High=1,K=0.3,IN=[G3],RST=I2}
+    G3 Generator{WT=WT2,Glide=1,IN=[F5,I2],RST=I2}
+    I2 Input{}
+    F5 Filter{A=0,D=0,S=1,R=0,Low=22050,High=1,K=0.01,IN=[G4]}
+    G4 Generator{WT=WT2,Glide=0,IN=[K2],RST=I2}
+    K1 Constant{Value=5}
+    K2 Constant{Value=20}
+    N0 Noise{Type=0,IN=[I3],RST=I3}
 END SECTION
 
 SECTION NOTES
     I1 NOTES {Divisor=64, Notes=[16C4, 16D4, 16E4, 16G4, 64C5]}
     I3, PCM {Interpolation=Cosine, Stride=10,
-        Samples=[0, 4, 7, 9, 10, 9, 7, 4, 0, -4, -7, -9, -10, -9, -7, -4]
+        Samples=[1 0, 1 4, 1 7, 1 9, 1 10, 1 9, 1 7, 1 4, 1 0, 1 -4, 1 -7, 1 -9, 1 -10, 1 -9, 1 -7, 1 -4]
     }
 END SECTION
 #<END FILE>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
