@@ -38,7 +38,7 @@
 %type values { PpValueList* }
 %type list_value { PpValueList* }
 
-%nonassoc LCURLY RCURLY LSQUARE RSQUARE EQUALS BEGIN SECTION END INSTANCES NOTES.
+%nonassoc LCURLY RCURLY LSQUARE RSQUARE EQUALS SECTION END INSTANCES NOTES PCM.
 
 %start_symbol file
 
