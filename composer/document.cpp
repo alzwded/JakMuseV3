@@ -419,7 +419,7 @@ void Document::SetActiveToMarked()
 void Document::NewNote()
 {
     Note n = { 12, '-', ' ', ' ' };
-    Note p = { 12, '1', '8', '2' };
+    Note p = { 12, '5', '0', '0' };
     switch(insertMode_)
     {
     case InsertMode_t::INSERT:

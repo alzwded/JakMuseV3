@@ -24,7 +24,7 @@ bool TryParseNote(const char* s, Note* n)
     // expecting a number
     std::string number;
     for(size_t i = 0; i < text.size(); ++i) {
-        if(isdigit(text[i])) {
+        if(text[i] >= '0' && text[i] <= '9') {
             number.append(std::string(1, text[i]));
         } else {
             break;
@@ -51,7 +51,7 @@ bool TryParseNote(const char* s, Note* n)
     if(text.empty() && noteName != '-') return false;
     char height = 0;
     if(noteName != '-') {
-        if(isdigit(text[0])) {
+        if(text[0] >= '0' && text[0] <= '9') {
             height = text[0];
         }
     }
@@ -170,7 +170,9 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
         return true;
     }
 
-    if(std::all_of(&stext[0], &stext[stext.size() - 1], isdigit)) {
+    if(std::all_of(&stext[0], &stext[0] + stext.size(), [](char c) -> bool {
+                    return c >= '0' && c <= '9';
+                })) {
         LOG("NUMBER");
         AssignString(text.str(), sToken);
         hTokenId = NUMBER;
