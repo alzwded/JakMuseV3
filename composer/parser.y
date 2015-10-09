@@ -35,8 +35,8 @@
 file ::= staff_list(val). {
     *FileHead = val;
 }
-file(R) ::= . {
-    R = NULL;
+file ::= . {
+    *FileHead = NULL;
 }
 
 staff_list(R) ::= staff(curr). {
