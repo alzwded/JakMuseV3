@@ -1,6 +1,7 @@
 
 %include {
     #include <stdlib.h>
+    #include <string.h>
     #include <assert.h>
     #include "parser_types.h"
 
@@ -38,7 +39,7 @@
 %type values { PpValueList* }
 %type list_value { PpValueList* }
 
-%nonassoc LCURLY RCURLY LSQUARE RSQUARE EQUALS SECTION END INSTANCES NOTES PCM.
+%nonassoc LCURLY RCURLY LSQUARE RSQUARE EQUALS SECTION END INSTANCES NOTES PCM OUTPUT.
 
 %start_symbol file
 
@@ -96,6 +97,14 @@ instance_list(R) ::= instance_list(head) instance(curr). {
     } else {
         R = next;
     }
+}
+
+instance(R) ::= OUTPUT param_list(LEparams). {
+    static const char* output = "OUTPUT";
+    R.name = NULL;
+    R.type = (char*)malloc(sizeof(char) * (sizeof(output)/sizeof(char) + 1));
+    strcpy(R.type, output);
+    R.params = LEparams;
 }
 
 instance(R) ::= STRING(LEname) STRING(LEtype) param_list(LEparams). {

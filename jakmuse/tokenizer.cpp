@@ -144,6 +144,12 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
     if(text.str().empty()) return false;
     std::string stext = text.str();
 
+    if(stext.compare("OUTPUT") == 0) {
+        LOG("OUTPUT");
+        hTokenId = OUTPUT;
+        return true;
+    }
+
     if(stext.compare("NOTES") == 0) {
         LOG("NOTES");
         hTokenId = NOTES;

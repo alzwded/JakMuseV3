@@ -570,6 +570,9 @@ Paramters
     High        1           high pass filter cut off frequency; can be Input#PCM (0 = 1; 255 = 22050)
     K           0.5         gain factor; can be Input#PCM (0 = 0; 255 = 1)
     InvertADSR  0           invert envelope (A->D, D->A, R->A2)
+    Mixing      Cut         mixing type for inputs;
+                                Cut = I1 + I2...
+                                Flatten = atan(I1 + I2...)
     [INPUT]     X=0         sample to operate upon
     [RESET]     -
 
@@ -850,7 +853,8 @@ SECTION INSTANCES
 # O is global output
 # declares instances of generators, filters, inputs, etc
 # this sets their parameters
-    F1 Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4,IN=[F2,F3],RST=I1}
+    OUTPUT {IN=[F1,F4],Mixing=Flatten}
+    F1 Filter{A=0,D=0,S=1,R=0,ResetADSR=1,Low=8000,High=300,K=0.4,IN=[F2,F3],RST=I1,Mixing=Cut}
     F2 Filter{A=100,D=100,S=0.5,R=100,ResetADSR=0,Low=22050,High=300,K=0.8,IN=[G1],RST=I1}
     WT1 WaveTable{Interpolation=Truncate,Data=[1,-1]}
     G1 Generator{WT=WT1,Glide=1,IN=[I1],RST=[I1]}
@@ -876,3 +880,129 @@ SECTION NOTES
 END SECTION
 #<END FILE>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+==============================================================
+Code scratch
+==============================================================
+
+vibrato:
+
+I1 Input{RESET=[G0]}
+I2 Input{RESET=[GV]}
+F2_0 Filter{K=I2,IN=I1}
+F2_1 Filter{K=F2_0,IN=GV}
+Sine WT{Cosine, [1, -1]}
+GV Generator{WT=Sine,Glide=0,IN=20Hz}
+GO Generator{WT=Sine,Glide=1,IN=[I1,F2_1]}
+
+I1 NOTES {... [12A2, 12H2]}
+I2 PCM {... [12 18.33, 12 17.57]}
+
+F2_0 = [A2/18.33 = 6, H2/17.57 = 7]
+F2_1 = [Sine*6, Sine*7]
+GO = [Sine(A2 +- 6), Sine(H2 +- 7)]
+
+probably something like
+F2_0 = [0.04 * 0.005, 0.04 * 0.0055]
+F2_1 = [sine(-0.0002..0.0002), sine(-0.00022..0.00022)]
+G0 = [sine(2*pi*22050*sine(-0.0002..0.0002)), sine(2*pi*22050*sine(-0.00022..0.00022))]
+
+inputs/outputs: double precision 0..1
+frequency: 0 = 0Hz; 1 = 22050Hz
+time series: 0 = -1.0; 1 = 1.0
+k,s: 0 = 0.0; 1 = 1.0
+a,d,r: 0 = 0; 1 = 3000ms
+low,high: 0 = 0Hz; 1 = 22050Hz
+notes: 0Hz = 0; 22050Hz = 1
+PCM: 0 = 0; 255 = 1
+
+
+struct ABlock
+{
+    double Value() { return ovalue_; }
+    std::list<ABlock*>& Inputs();
+    void Tick() {
+        ivalue_ = Input();
+        ovalue_ = Tick_(ivalue_);
+    }
+
+    virtual void Reset() =0;
+
+protected:
+    virtual double Tick_(double input) =0;
+
+    float Input()
+    {
+        float v = 0.f;
+        v = std::accumulate(inputs_.begin(), inputs_.end(), v,
+                [](float v, ABlock* b) -> float {
+                    v = v + b->Value();
+                });
+    }
+
+private:
+    std::list<ABlock*> inputs_;
+    float ivalue_ = 0.f;
+    float ovalue_ = 0.f;
+};
+
+struct Constant 
+: public IBlock
+{
+    float value;
+protected:
+    float Tick_(float) override {}
+};
+
+struct Filter
+: public IBlock
+{
+    double Tick_(double v)
+    {
+        if(ATAN) v = atan(v);
+        envelope(v);
+        scale(v);
+    }
+};
+
+struct Generator
+: public IBlock
+{
+};
+
+struct Input
+: public ABlock
+{
+protected:
+    float Tick_(float)
+    {
+        // if duration == 0
+        //     input_ >> next note;
+        //     sample = next note.value / 255.f
+        //     duration = next note.duration
+        //     for(ABlock* b : connections_) {
+        //         b->Reset();
+        //     }
+        // --duration;
+
+        // return sample;
+    }
+};
+
+struct Output
+{
+    double Tick_(double in)
+    {
+        return (atan(in) * 2.0 / PI) * 127.0;
+    }
+}
+
+struct WaveTable
+{
+    double value(double in)
+    {
+        assert(0.f <= in <= 1.f);
+        assert(floor(0.f) == ceil(0.f));
+        assert(floor(0.5f) == ceil(0.5f) - 1.f);
+        return interpolate(numThunks * in, floor(numThunks * in), ceil(numThunks * in));
+    }
+};
