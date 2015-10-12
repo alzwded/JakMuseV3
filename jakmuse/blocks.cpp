@@ -146,7 +146,9 @@ double Filter::ApplyEnvelope(double x)
     {
     case ATTACK:
         if(ADSR_counter < AttackValue()) {
-            double ret = ((double)ADSR_counter / AttackValue() * x);
+            double value = (double)ADSR_counter / AttackValue();
+            if(InvertADSR) value = 1.0 - value;
+            double ret = (value * x);
             ADSR_counter++;
             return ret;
         } else {
@@ -156,12 +158,19 @@ double Filter::ApplyEnvelope(double x)
         }
     case DECAY:
         if(ADSR_counter < DecayValue()) {
-            double r0 = (1.0 - (double)ADSR_counter / DecayValue());
-            double r2 = SustainValue();
-            double r1 = 1 - r2;
-            r0 = r0 * r1 + r2;
+            if(!ResetADSR) {
+                double r0 = (1.0 - (double)ADSR_counter / DecayValue());
+                double r2 = SustainValue();
+                double r1 = 1 - r2;
+                r0 = r0 * r1 + r2;
+                return (r0 * x);
+            } else {
+                double r0 = ((double)ADSR_counter / DecayValue());
+                double r2 = SustainValue();
+                r0 = r0 * r2;
+                return (r0 * x);
+            }
             ADSR_counter++;
-            return (r0 * x);
         } else {
             ADSR_counter = 0;
             state = SUSTAIN;
@@ -171,10 +180,18 @@ double Filter::ApplyEnvelope(double x)
         return SustainValue() * x;
     case RELEASE:
         if(ADSR_counter < ReleaseValue()) {
-            double r0 = (1.0 - (double)ADSR_counter / ReleaseValue());
-            double r2 = SustainValue();
-            r0 = r0 * r2;
-            return r0 * x;
+            if(!ResetADSR) {
+                double r0 = (1.0 - (double)ADSR_counter / ReleaseValue());
+                double r2 = SustainValue();
+                r0 = r0 * r2;
+                return r0 * x;
+            } else {
+                double r0 = ((double)ADSR_counter / ReleaseValue());
+                double r2 = SustainValue();
+                double r1 = 1.0 - r2;
+                r0 = r0 * r1 + r2;
+                return r0 * x;
+            }
         } else {
             ADSR_counter = 0;
             state = REST;
