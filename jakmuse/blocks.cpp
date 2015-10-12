@@ -182,6 +182,11 @@ double Filter::ApplyEnvelope(double x)
         }
     case REST:
         return 0;
+    default:
+#define INVALID_STATE false
+        assert(INVALID_STATE);
+        return 0;
+#undef INVALID_STATE
     }
 }
 

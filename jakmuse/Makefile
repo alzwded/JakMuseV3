@@ -8,7 +8,7 @@ LIBS =
 
 .SUFFIXES:.cpp .hpp .h .obj
 
-OBJS = tokenizer.obj parser.obj
+OBJS = tokenizer.obj parser.obj blocks.obj blocks_interpreter.obj
 
 composer.exe: $(OBJS)
 	$(LD) $(LDOPTS) $(OBJS) $(LIBS)

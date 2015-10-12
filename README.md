@@ -21,15 +21,15 @@ Roadmap
 =======
 
 - specs (more or less done)
-- composer
+- composer (ready)
   + GUI (ready)
   + back-end (ready)
 - instrument & score parser (i.e. the I or I/O) (in progress)
 - synthesizer
   + blocks... (in progress)
   + mixer... (in progress)
-  + connections...
+  + connections... (in progress)
   + clock...
 - documentation (convert specs to docs)
-- modify "static" parameters to also be connectable to input sources (filter frequencies, gain, ADSR); or just do this from the get-go
+- modify "static" parameters to also be connectable to input sources (filter frequencies, gain, ADSR); or just do this from the get-go (handled)
 - linux support (i.e. Makefile + ifdef away windows specific stuff)

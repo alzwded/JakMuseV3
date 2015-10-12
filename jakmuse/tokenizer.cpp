@@ -188,7 +188,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
     }
 
     if(std::all_of(&stext[0], &stext[0] + stext.size(), [](char c) -> bool {
-                    return c >= '0' && c <= '9'
+                    return c >= '0' && c <= '9';
                 })) {
         LOG("NUMBER");
         AssignString(text.str(), sToken);
