@@ -213,6 +213,11 @@ struct Input
 {
     typedef std::tuple<int, double, ResetKind> value_type;
 
+    // TODO interpolation? That is in the staff right now...
+    //      maybe it's actually better if interpolated PCM data
+    //      gets interpolated before being put in the stream
+    //      (gets rid of lookahead or potential delays)
+    //      TO BE CONSIDERED
     TypeStream<value_type> stream_;
     std::vector<std::shared_ptr<ABlock>> resetBus_;
 
