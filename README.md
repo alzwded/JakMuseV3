@@ -24,10 +24,10 @@ Roadmap
 - composer
   + GUI (ready)
   + back-end (ready)
-- instrument & score parser (i.e. the I or I/O)
+- instrument & score parser (i.e. the I or I/O) (in progress)
 - synthesizer
-  + blocks...
-  + mixer...
+  + blocks... (in progress)
+  + mixer... (in progress)
   + connections...
   + clock...
 - documentation (convert specs to docs)
