@@ -912,8 +912,10 @@ time series: 0 = -1.0; 1 = 1.0
 k,s: 0 = 0.0; 1 = 1.0
 a,d,r: 0 = 0; 1 = 3000ms
 low,high: 0 = 0Hz; 1 = 22050Hz
-notes: 0Hz = 0; 22050Hz = 1
-PCM: 0 = 0; 999 = 1
+
+stdin:
+notes: (0Hz) -> 0; (22050Hz) -> 1
+PCM: 0 -> 0; 999 -> 1
 
 
 struct ABlock
