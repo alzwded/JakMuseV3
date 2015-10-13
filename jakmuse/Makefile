@@ -3,7 +3,7 @@ GLUTROOT = ..\freeglut
 LEMONROOT = ..\vendor\lemon
 CFLAGS = /Ot /c /EHsc /I. /Zi /arch:SSE2
 LD = link.exe
-LDOPTS = /OUT:jakmuse.exe /DEBUG /PDB:composer.pdb
+LDOPTS = /OUT:jakmuse.exe /DEBUG /PDB:jakmuse.pdb
 LIBS = 
 
 .SUFFIXES:.cpp .hpp .h .obj
