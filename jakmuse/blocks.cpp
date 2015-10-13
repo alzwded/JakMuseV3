@@ -369,6 +369,8 @@ double PhaseAccumulator::Value()
 // Noise
 // ===========================================================
 
+const unsigned Noise::polys[2] = { 0x8255, 0xA801 };
+
 void Noise::ResetTick(ResetKind kind)
 {
     if(kind == ResetKind::REST) goal = -1;
@@ -397,5 +399,10 @@ double Noise::NextValue_(double)
     switch(type_) {
     case EIGHT: return (double)regs[0] / 0xFFFF;
     case SIXTEEN: return (double)regs[1] / 0xFFFF;
+    default:
+#define INVALID_NOISE_TYPE false
+        assert(INVALID_NOISE_TYPE);
+        return 0;
+#undef INVALID_NOISE_TYPE
     }
 }

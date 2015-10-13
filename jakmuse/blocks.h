@@ -133,7 +133,7 @@ protected:
         return v;
     }
 
-private:
+protected:
     std::list<std::shared_ptr<ABlock>> inputs_;
     double ivalue_ = 0.0, ovalue_ = 0.0;
 };
@@ -254,8 +254,8 @@ protected:
 
 private:
     int counter, goal;
-    unsigned regs[2] = { 0xA001, 0xA001 };
-    static unsigned polys[2] = { 0x8255, 0xA801 };
+    std::vector<unsigned> regs = { 0xA001, 0xA001 };
+    static const unsigned polys[2];
 };
 
 struct Output
