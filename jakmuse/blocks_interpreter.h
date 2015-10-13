@@ -57,16 +57,15 @@ struct InstanceInterpreter
     std::shared_ptr<ABlock> Block() override { return thing_; }
 };
 
-template<> DelayedLookup_fn InstanceInterpreter<Constant>::AcceptParameter(std::string, PpValue);
-template<> DelayedLookup_fn InstanceInterpreter<Generator>::AcceptParameter(std::string, PpValue);
-template<> DelayedLookup_fn InstanceInterpreter<Filter>::AcceptParameter(std::string, PpValue);
-template<> DelayedLookup_fn InstanceInterpreter<Input>::AcceptParameter(std::string, PpValue);
-template<> DelayedLookup_fn InstanceInterpreter<Delay>::AcceptParameter(std::string, PpValue);
+#define DECLARE_INSTANCE(TYPE) \
+    template<> DelayedLookup_fn InstanceInterpreter<TYPE>::AcceptParameter(std::string, PpValue); \
+    extern template InstanceInterpreter<TYPE>;
 
-extern template InstanceInterpreter<Constant>;
-extern template InstanceInterpreter<Generator>;
-extern template InstanceInterpreter<Filter>;
-extern template InstanceInterpreter<Input>;
-extern template InstanceInterpreter<Delay>;
+DECLARE_INSTANCE(Constant)
+DECLARE_INSTANCE(Generator)
+DECLARE_INSTANCE(Filter)
+DECLARE_INSTANCE(Input)
+DECLARE_INSTANCE(Delay)
+DECLARE_INSTANCE(Noise)
 
 #endif

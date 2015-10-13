@@ -364,3 +364,38 @@ double PhaseAccumulator::Value()
 {
     return phi;
 }
+
+// ===========================================================
+// Noise
+// ===========================================================
+
+void Noise::ResetTick(ResetKind kind)
+{
+    if(kind == ResetKind::REST) goal = -1;
+    else goal = (int)(999.0 * ivalue_);
+
+    ++counter;
+    if(counter >= goal) {
+        switch(type_) {
+        case EIGHT:
+            if(regs[0] & 0x1) regs[0] = (regs[0] >> 1) ^ polys[0];
+            else regs[0] = (regs[0] >> 1);
+            break;
+        case SIXTEEN:
+            if(regs[1] & 0x1) regs[1] = (regs[1] >> 1) ^ polys[1];
+            else regs[1] = (regs[1] >> 1);
+            break;
+        }
+        counter = 0;
+    }
+}
+
+double Noise::NextValue_(double)
+{
+    if(goal < 0) return 0;
+
+    switch(type_) {
+    case EIGHT: return (double)regs[0] / 0xFFFF;
+    case SIXTEEN: return (double)regs[1] / 0xFFFF;
+    }
+}

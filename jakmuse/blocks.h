@@ -243,10 +243,24 @@ protected:
     double NextValue_(double x) override { return x; }
 };
 
+struct Noise
+: public ABlock
+{
+    void ResetTick(ResetKind) override;
+    enum { EIGHT, SIXTEEN } type_;
+
+protected:
+    double NextValue_(double x) override;
+
+private:
+    int counter, goal;
+    unsigned regs[2] = { 0xA001, 0xA001 };
+    static unsigned polys[2] = { 0x8255, 0xA801 };
+};
+
 struct Output
 : public ABlock
 {
-
     void ResetTick(ResetKind) override {}
 
 protected:

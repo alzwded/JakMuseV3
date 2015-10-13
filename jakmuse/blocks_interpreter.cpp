@@ -46,9 +46,67 @@ InstanceInterpreter<Generator>::AcceptParameter(
         PpValue value)
 {
     if(paramName.compare("WT") == 0) {
-        return nullptr;
+        switch(value.type) {
+        case PpValue::PpLIST:
+            {
+                for(PpValueList* p = value.list; p; p = p->next) {
+                    PpValue v = p->value;
+                    switch(v.type) {
+                    case PpValue::PpNUMBER:
+                        thing_->WT.table_.push_back(v.num);
+                        return nullptr;
+                    default:
+                        throw std::invalid_argument("WT: value: Expecing a LIST of NUMBERs");
+                    }
+                }
+            }
+        default:
+            throw std::invalid_argument("WT: value: Expecing a LIST of NUMBERs");
+        }
+    } else if(paramName.compare("Interpolation") == 0) {
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string s;
+                s.assign(value.str);
+                if(s.compare("Cosine") == 0) {
+                    thing_->WT.interpolationMethod_ = WaveTable::COSINE;
+                    return nullptr;
+                } else if(s.compare("Linear") == 0) {
+                    thing_->WT.interpolationMethod_ = WaveTable::LINEAR;
+                    return nullptr;
+                } else if(s.compare("Trunc") == 0) {
+                    thing_->WT.interpolationMethod_ = WaveTable::TRUNCATE;
+                    return nullptr;
+                } else {
+                    /*FALLTHROUGH*/
+                }
+            }
+        default:
+            throw std::invalid_argument("WT: interpolation: Expecting Cosine, Trunc, Linear");
+        }
     } else if(paramName.compare("Glide") == 0) {
-        return nullptr;
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string name;
+                name.assign(value.str);
+                thing_sp thing = thing_;
+                return [thing, name](LookupMap_t const& map) {
+                        thing->TGlide = map.at(name);
+                        };
+            }
+            break;
+        case PpValue::PpNUMBER:
+            {
+                std::shared_ptr<Constant> k(new Constant);
+                k->value_ = (double)value.num / 2550; // FIXME
+                thing_->TGlide = std::dynamic_pointer_cast<ABlock>(k);
+                return nullptr;
+            }
+        default:
+            throw std::invalid_argument("Generator: Glide: expecinting a NUMBER or a STRING");
+        }
     } else if(paramName.compare("IN") == 0) {
         switch(value.type) {
         case PpValue::PpLIST:
@@ -73,9 +131,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
                     }
                 }
                 return [fns](LookupMap_t const& map) {
-                    for(auto&& fn : fns) {
-                        fn(map);
-                    }
+                    for(auto&& fn : fns) fn(map);
                 };
             }
             break;
@@ -95,14 +151,13 @@ InstanceInterpreter<Generator>::AcceptParameter(
                 std::shared_ptr<Constant> k(new Constant);
                 k->value_ = (double)value.num / 22050; // FIXME
                 thing_->Inputs().push_back(std::dynamic_pointer_cast<ABlock>(k));
-            };
+                return nullptr;
+            }
         default:
             throw std::invalid_argument("IN: value: expecting LIST of STRINGs or STRING");
         }
-    } else if(paramName.compare("RST") == 0) {
-        return nullptr;
     } else {
-        throw std::invalid_argument("paramName: Expecting WT, Glide, IN, RST");
+        throw std::invalid_argument("paramName: Expecting WT, Interpolation, Glide, IN");
     }
 }
 
@@ -110,19 +165,149 @@ template<>
 DelayedLookup_fn
 InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue value)
 {
-    return nullptr;
+    if(paramName.compare("A") == 0) {
+    } else if(paramName.compare("D") == 0) {
+    } else if(paramName.compare("S") == 0) {
+    } else if(paramName.compare("R") == 0) {
+    } else if(paramName.compare("ResetADSR") == 0) {
+    } else if(paramName.compare("InvertADSR") == 0) {
+    } else if(paramName.compare("Low") == 0) {
+    } else if(paramName.compare("High") == 0) {
+    } else if(paramName.compare("K") == 0) {
+    } else if(paramName.compare("Mixing") == 0) {
+    } else if(paramName.compare("IN") == 0) {
+    }
+    throw std::invalid_argument("Filter: paramName: expecting A,D,S,R,ResetADSR,Low,High,K,InvertADSR,Mixing,IN");
 }
 
 template<>
 DelayedLookup_fn
 InstanceInterpreter<Input>::AcceptParameter(std::string paramName, PpValue value)
 {
-    return nullptr;
+    if(paramName.compare("RST") == 0) {
+        switch(value.type)
+        {
+        case PpValue::PpSTRING:
+            {
+                thing_->resetBus_.clear();
+                std::string name;
+                name.assign(value.str);
+                std::shared_ptr<thing_t> thing = thing_;
+                return [thing, name](LookupMap_t const& map) {
+                    thing->resetBus_.push_back(map.at(name));
+                };
+            }
+        case PpValue::PpLIST:
+            {
+                std::vector<std::string> names;
+                for(PpValueList* p = value.list; p; p = p->next)
+                {
+                    PpValue v = p->value;
+                    switch(v.type) {
+                    case PpValue::PpSTRING:
+                        {
+                            std::string s;
+                            s.assign(v.str);
+                            names.push_back(s);
+                        }
+                        break;
+                    default:
+                        throw std::invalid_argument("Input: RST: expecting LIST of STRINGs or STRING");
+                    }
+                }
+                decltype(thing_) thing = thing_;
+                return [thing, names](LookupMap_t const& map) {
+                    for(auto&& s : names) {
+                        thing->resetBus_.push_back(map.at(s));
+                    }
+                };
+            }
+        default:
+            throw std::invalid_argument("Input: RST: expecting LIST of STRINGs or STRING");
+        }
+    }
+    throw std::invalid_argument("Input: paramName: expecing RST");
 }
 
 template<>
 DelayedLookup_fn
 InstanceInterpreter<Delay>::AcceptParameter(std::string paramName, PpValue value)
 {
-    return nullptr;
+    throw std::invalid_argument("Delay: not expecting any parameters");
+}
+
+template<>
+DelayedLookup_fn
+InstanceInterpreter<Noise>::AcceptParameter(std::string paramName, PpValue value)
+{
+    if(paramName.compare("Type") == 0) {
+        switch(value.type) {
+        case PpValue::PpNUMBER:
+            switch(value.num) {
+            case 0:
+                thing_->type_ = Noise::EIGHT;
+                return nullptr;
+            case 1:
+                thing_->type_ = Noise::SIXTEEN;
+                return nullptr;
+            default:
+                throw std::invalid_argument("Noise: Type: expecting 0 or 1");
+            }
+            break;
+        default:
+            throw std::invalid_argument("Noise: Type: expecting a NUMBER");
+        }
+    } else if(paramName.compare("IN") == 0) {
+        // TODO this bit of code is common for everyone
+        //      refactor into template<enum> ?
+        switch(value.type) {
+        case PpValue::PpLIST:
+            {
+                thing_->Inputs().clear();
+                std::deque<DelayedLookup_fn> fns;
+                for(PpValueList* p = value.list; p; p = p->next) {
+                    PpValue v = p->value;
+                    switch(v.type) {
+                    case PpValue::PpSTRING:
+                        {
+                            std::string name;
+                            name.assign(value.str);
+                            thing_sp thing = thing_;
+                            fns.push_back([thing, name](LookupMap_t const& map) {
+                                        thing->Inputs().push_back(map.at(name));
+                                    });
+                        }
+                        break;
+                    default:
+                        throw std::invalid_argument("value: expected STRING or LIST of STRINGs or NUMBER");
+                    }
+                }
+                return [fns](LookupMap_t const& map) {
+                    for(auto&& fn : fns) fn(map);
+                };
+            }
+            break;
+        case PpValue::PpSTRING:
+            {
+                thing_->Inputs().clear();
+                std::string name;
+                name.assign(value.str);
+                std::shared_ptr<thing_t> thing = thing_;
+                return [thing, name](LookupMap_t const& map) {
+                    thing->Inputs().push_back(map.at(name));
+                };
+            }
+        case PpValue::PpNUMBER:
+            {
+                thing_->Inputs().clear();
+                std::shared_ptr<Constant> k(new Constant);
+                k->value_ = (double)value.num / 22050; // FIXME
+                thing_->Inputs().push_back(std::dynamic_pointer_cast<ABlock>(k));
+                return nullptr;
+            }
+        default:
+            throw std::invalid_argument("IN: value: expecting LIST of STRINGs or STRING");
+        }
+    }
+    throw std::invalid_argument("Noise: paramName: expecting Type or IN");
 }
