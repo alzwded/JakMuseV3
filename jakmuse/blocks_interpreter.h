@@ -20,21 +20,11 @@ typedef std::function<void(LookupMap_t)> DelayedLookup_fn;
 
 struct IInstanceInterpreter
 {
-    virtual ~IInstanceInterpreter();
+    virtual ~IInstanceInterpreter() {}
     virtual std::shared_ptr<ABlock> Block() =0;
     virtual std::string Name() =0;
     virtual DelayedLookup_fn AcceptParameter(std::string paramName, PpValue value) =0;
 };
-
-LookupMap_t::mapped_type LookupMap_t::at(LookupMap_t::key_type name) const
-{
-    auto&& found = std::find_if(data_.begin(), data_.end(),
-            [name](value_type const& v) -> bool {
-                return v->Name().compare(name) == 0;
-            });
-    if(found == data_.end()) throw std::out_of_range(name + " not found.");
-    return (*found)->Block();
-}
 
 std::shared_ptr<IInstanceInterpreter> GetInterpreter(std::string instanceType, std::string name);
 

@@ -3,14 +3,14 @@ GLUTROOT = ..\freeglut
 LEMONROOT = ..\vendor\lemon
 CFLAGS = /Ot /c /EHsc /I. /Zi /arch:SSE2
 LD = link.exe
-LDOPTS = /OUT:composer.exe /DEBUG /PDB:composer.pdb
+LDOPTS = /OUT:jakmuse.exe /DEBUG /PDB:composer.pdb
 LIBS = 
 
 .SUFFIXES:.cpp .hpp .h .obj
 
-OBJS = tokenizer.obj parser.obj blocks.obj blocks_interpreter.obj
+OBJS = tokenizer.obj parser.obj blocks.obj blocks_interpreter.obj jakmuse.obj
 
-composer.exe: $(OBJS)
+jakmuse.exe: $(OBJS)
 	$(LD) $(LDOPTS) $(OBJS) $(LIBS)
 
 tokenizer.cpp: parser.h
@@ -29,4 +29,4 @@ $(LEMONROOT)\lemon.exe: $(LEMONROOT)\lemon.c $(LEMONROOT)\lempar.c
 	$(CC) /Fe:$(LEMONROOT)\lemon.exe $(LEMONROOT)\lemon.c
 
 clean:
-	del /q *.obj composer.exe $(LEMONROOT)\lemon.exe parser.cpp parser.out parser.h *.ilk *.pdb
+	del /q *.obj jakmuse.exe $(LEMONROOT)\lemon.exe parser.cpp parser.out parser.h *.ilk *.pdb

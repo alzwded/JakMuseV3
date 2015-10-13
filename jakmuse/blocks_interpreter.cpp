@@ -18,6 +18,8 @@ std::shared_ptr<IInstanceInterpreter> GetInterpreter(std::string instanceType, s
         return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Input>>(name));
     } else if(instanceType.compare("Delay") == 0) {
         return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Delay>>(name));
+    } else if(instanceType.compare("Noise") == 0) {
+        return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Noise>>(name));
     } else {
         throw std::invalid_argument(std::string("Unknown instance type ") + instanceType);
     }
@@ -165,16 +167,78 @@ template<>
 DelayedLookup_fn
 InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue value)
 {
+#define NUMBER_OR_INPUT(PARAM, SCALE) do{\
+        switch(value.type) {\
+        case PpValue::PpNUMBER:\
+            {\
+                std::shared_ptr<Constant> c(new Constant);\
+                c->value_ = (double)value.num / SCALE;\
+                thing_->PARAM = std::dynamic_pointer_cast<ABlock>(c);\
+                return nullptr;\
+            }\
+        case PpValue::PpSTRING:\
+            {\
+                std::string name;\
+                name.assign(value.str);\
+                auto thing = thing_;\
+                return [thing, name](LookupMap_t const& map) {\
+                    thing->PARAM = map.at(name);\
+                };\
+            }\
+        default:\
+            throw std::invalid_argument("Filter: " #PARAM ": expecting STRING or NUMBER");\
+        }\
+}while(0)
     if(paramName.compare("A") == 0) {
+        NUMBER_OR_INPUT(A, 2550.0);
     } else if(paramName.compare("D") == 0) {
+        NUMBER_OR_INPUT(D, 2550.0);
     } else if(paramName.compare("S") == 0) {
+        NUMBER_OR_INPUT(S, 999.0);
     } else if(paramName.compare("R") == 0) {
+        NUMBER_OR_INPUT(R, 2550.0);
     } else if(paramName.compare("ResetADSR") == 0) {
+        switch(value.type) {
+        case PpValue::PpNUMBER:
+            if(value.num > 1) throw std::invalid_argument("Filter: ResetADSR: expecting 1 or 0");
+            thing_->ResetADSR = value.num != 0;
+            return nullptr;
+        default:
+            throw std::invalid_argument("Filter: ResetADSR expecting NUMBER");
+        }
     } else if(paramName.compare("InvertADSR") == 0) {
+        switch(value.type) {
+        case PpValue::PpNUMBER:
+            if(value.num > 1) throw std::invalid_argument("Filter: InvertADSR: expecting 1 or 0");
+            thing_->InvertADSR = value.num != 0;
+            return nullptr;
+        default:
+            throw std::invalid_argument("Filter: InvertADSR: expecting NUMBER");
+        }
     } else if(paramName.compare("Mixing") == 0) {
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string s;
+                s.assign(value.str);
+                if(s.compare("Cut") == 0) {
+                    thing_->mixing_ = Filter::Cut;
+                } else if(s.compare("Flatten") == 0) {
+                    thing_->mixing_ = Filter::Flatten;
+                } else {
+                    throw std::invalid_argument("Filter: Mixing: expecting Cut or Flatten");
+                }
+            }
+            return nullptr;
+        default:
+            throw std::invalid_argument("Filter: Mixing: expecting a STRING");
+        }
     } else if(paramName.compare("Low") == 0) {
+        NUMBER_OR_INPUT(Lo, 22050.0);
     } else if(paramName.compare("High") == 0) {
+        NUMBER_OR_INPUT(Hi, 22050.0);
     } else if(paramName.compare("K") == 0) {
+        NUMBER_OR_INPUT(K, 999.0);
     } else if(paramName.compare("IN") == 0) {
         // TODO this bit of code is common for everyone
         //      refactor into template<enum> ?
@@ -361,4 +425,14 @@ InstanceInterpreter<Noise>::AcceptParameter(std::string paramName, PpValue value
         }
     }
     throw std::invalid_argument("Noise: paramName: expecting Type or IN");
+}
+
+LookupMap_t::mapped_type LookupMap_t::at(LookupMap_t::key_type name) const
+{
+    auto&& found = std::find_if(data_.begin(), data_.end(),
+            [name](value_type const& v) -> bool {
+                return v->Name().compare(name) == 0;
+            });
+    if(found == data_.end()) throw std::out_of_range(name + " not found.");
+    return (*found)->Block();
 }

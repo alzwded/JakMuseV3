@@ -100,7 +100,7 @@ enum class ResetKind {
 //    put Output->Value()
 struct ABlock
 {
-    virtual ~ABlock();
+    virtual ~ABlock() {}
 
     std::list<std::shared_ptr<ABlock>>& Inputs() { return inputs_; }
     double Value() { return ovalue_; }
