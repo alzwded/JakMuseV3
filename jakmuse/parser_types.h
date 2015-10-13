@@ -3,7 +3,7 @@
 
 struct Note {
     int duration;
-    float value;
+    double value;
 };
 
 struct PpValueList;

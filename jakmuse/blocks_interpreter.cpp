@@ -5,24 +5,31 @@ template struct InstanceInterpreter<Generator>;
 template struct InstanceInterpreter<Filter>;
 template struct InstanceInterpreter<Input>;
 template struct InstanceInterpreter<Delay>;
+template struct InstanceInterpreter<Noise>;
 
 std::shared_ptr<IInstanceInterpreter> GetInterpreter(std::string instanceType, std::string name)
 {
-    if(instanceType.compare("Constant") == 0) {
-        return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Constant>>(name));
-    } else if(instanceType.compare("Generator") == 0) {
-        return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Generator>>(name));
-    } else if(instanceType.compare("Filter") == 0) {
-        return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Filter>>(name));
-    } else if(instanceType.compare("Input") == 0) {
-        return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Input>>(name));
-    } else if(instanceType.compare("Delay") == 0) {
-        return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Delay>>(name));
-    } else if(instanceType.compare("Noise") == 0) {
-        return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<Noise>>(name));
-    } else {
-        throw std::invalid_argument(std::string("Unknown instance type ") + instanceType);
-    }
+#define INSTANCE_DECLARATION_START() if(0)
+
+#define DECLARE_INSTANCE(TYPE) } else if(instanceType.compare(#TYPE) == 0) {\
+    do{ return std::dynamic_pointer_cast<IInstanceInterpreter>(std::make_shared<InstanceInterpreter<TYPE>>(name)); }while(0)
+
+#define INSTANCE_DECLARATION_END() else {\
+    throw std::invalid_argument(std::string("Unknown instance type ") + instanceType);\
+}do{}while(0)
+
+    INSTANCE_DECLARATION_START() {
+        DECLARE_INSTANCE(Constant);
+        DECLARE_INSTANCE(Generator);
+        DECLARE_INSTANCE(Input);
+        DECLARE_INSTANCE(Filter);
+        DECLARE_INSTANCE(Delay);
+        DECLARE_INSTANCE(Noise);
+    } INSTANCE_DECLARATION_END();
+
+#undef INSTANCE_DECLARATION_START
+#undef DECLARE_INSTANCE
+#undef INSTANCE_DECLARATION_END
 }
 
 template<>
@@ -435,4 +442,16 @@ LookupMap_t::mapped_type LookupMap_t::at(LookupMap_t::key_type name) const
             });
     if(found == data_.end()) throw std::out_of_range(name + " not found.");
     return (*found)->Block();
+}
+
+template<>
+CannonicalStream& InstanceInterpreter<Input>::InputBuffer()
+{
+    return thing_->stream_;
+}
+
+template<typename T>
+CannonicalStream& InstanceInterpreter<T>::InputBuffer()
+{
+    throw std::invalid_argument("Block does not support NOTES input");
 }

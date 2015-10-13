@@ -267,5 +267,7 @@ protected:
     double NextValue_(double) override;
 };
 
+typedef TypeStream<Input::value_type> CannonicalStream;
+
 
 #endif

@@ -24,6 +24,7 @@ struct IInstanceInterpreter
     virtual std::shared_ptr<ABlock> Block() =0;
     virtual std::string Name() =0;
     virtual DelayedLookup_fn AcceptParameter(std::string paramName, PpValue value) =0;
+    virtual CannonicalStream& InputBuffer() =0;
 };
 
 std::shared_ptr<IInstanceInterpreter> GetInterpreter(std::string instanceType, std::string name);
@@ -45,11 +46,14 @@ struct InstanceInterpreter
 
     std::string Name() override { return name_; }
     std::shared_ptr<ABlock> Block() override { return thing_; }
+    CannonicalStream& InputBuffer() override;
 };
 
 #define DECLARE_INSTANCE(TYPE) \
     template<> DelayedLookup_fn InstanceInterpreter<TYPE>::AcceptParameter(std::string, PpValue); \
     extern template InstanceInterpreter<TYPE>;
+
+template<> CannonicalStream& InstanceInterpreter<Input>::InputBuffer();
 
 DECLARE_INSTANCE(Constant)
 DECLARE_INSTANCE(Generator)
@@ -57,5 +61,7 @@ DECLARE_INSTANCE(Filter)
 DECLARE_INSTANCE(Input)
 DECLARE_INSTANCE(Delay)
 DECLARE_INSTANCE(Noise)
+
+#undef DECLARE_INSTANCE
 
 #endif
