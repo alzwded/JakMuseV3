@@ -254,7 +254,7 @@ protected:
 
 private:
     int counter, goal;
-    std::vector<unsigned> regs = { 0xA001, 0xA001 };
+    std::vector<unsigned> regs = std::vector<unsigned>{ 0xA001, 0xA001 }; // vs2013 RTM generates C2797 for some reason, so explicitly call list initializer; updates don't; yeah, it's one of those things
     static const unsigned polys[2];
 };
 
