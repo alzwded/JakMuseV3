@@ -2,6 +2,178 @@
 #include "notes_interpreter.h"
 #include "parser_types.h"
 #include <cstdio>
+#include <iostream>
+
+extern bool GetNextToken(std::istream&, int&, char*&);
+extern void* ParseAlloc(void* (*)(size_t));
+extern void Parse(void*, int, char*, struct PpFile*);
+extern void ParseFree(void*, void (*)(void*));
+extern void ParseTrace(FILE*, char*);
+
+static void PpValue_free(PpValue v)
+{
+    switch(v.type) {
+    case PpValue::PpSTRING:
+        free(v.str);
+        break;
+    case PpValue::PpLIST:
+        {
+            PpValueList* p = v.list;
+            while(p) {
+                PpValue_free(p->value);
+                PpValueList* prev = p;
+                p = p->next;
+                free(prev);
+            }
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+static void PpParamList_free(PpParamList* head)
+{
+    for(PpParamList* pp = head; pp;) {
+        PpParam param = pp->value;
+        free(param.key);
+        PpValue_free(param.value);
+
+        auto prev = pp;
+        pp = pp->next;
+        free(prev);
+    }
+}
+
+static void PpFile_free(PpFile f)
+{
+    for(PpInstanceList* p = f.instances; p;) {
+        PpInstance instance = p->value;
+
+        free(instance.name);
+        free(instance.type);
+        PpParamList_free(instance.params);
+
+        auto prev = p;
+        p = p->next;
+        free(prev);
+    }
+
+    for(PpStaffList* p = f.staves; p;) {
+        PpStaff staff = p->value;
+
+        free(staff.name);
+        PpParamList_free(staff.params);
+
+        auto prev = p;
+        p = p->next;
+        free(prev);
+    }
+}
+
+void sketch()
+{
+    void* pParser;
+    char* sToken;
+    int hTokenId;
+    PpFile fileHead;
+
+    pParser = ParseAlloc(malloc);
+    ParseTrace(stderr, "Parser:    ");
+    while(GetNextToken(std::cin, hTokenId, sToken)) {
+        Parse(pParser, hTokenId, sToken, &fileHead);
+    }
+    Parse(pParser, 0, sToken, &fileHead);
+    ParseFree(pParser, free);
+
+    LookupMap_t map;
+    std::vector<DelayedLookup_fn> delayedLookups;
+    
+    for(PpInstanceList* p = fileHead.instances; p; p = p->next) {
+        PpInstance instance = p->value;
+        std::remove_reference<decltype(GetInterpreter(instance.type, instance.name))>::type interp;
+        try {
+            interp = GetInterpreter(instance.type, instance.name);
+        } catch(std::exception e) {
+            fprintf(stderr, "Exception when instantiating %s: %s\n", instance.name, e.what());
+            continue;
+        }
+
+        for(PpParamList* pparam = instance.params; pparam; pparam = pparam->next) {
+            PpParam param = pparam->value;
+
+            DelayedLookup_fn f;
+            try {
+                f = interp->AcceptParameter(param.key, param.value);
+            } catch(std::exception e) {
+                fprintf(stderr, "Exception when processing parameter %s for instance %s: %s\n", param.key, instance.name, e.what());
+                continue;
+            }
+            if(f) delayedLookups.push_back(f);
+        }
+
+        map.data_.push_back(interp);
+    }
+
+    for(auto&& f : delayedLookups) f(map);
+
+    for(PpStaffList* p = fileHead.staves; p; p = p->next) {
+        PpStaff staff = p->value;
+
+        std::string type = (staff.type == 'N') ? "NOTES" : "PCM";
+
+        std::remove_reference<decltype(GetNotesInterpreter(type, staff.name))>::type interp;
+
+        try {
+            interp = GetNotesInterpreter(type, staff.name);
+        } catch(std::exception e) {
+            fprintf(stderr, "Exception caught while instantiating interpreter for %s: %s\n", staff.name, e.what());
+            continue;
+        }
+
+        for(PpParamList* pparam = staff.params; pparam; pparam = pparam->next) {
+            PpParam param = pparam->value;
+
+            try {
+                interp->AcceptParameter(param.key, param.value);
+            } catch(std::exception e) {
+                fprintf(stderr, "Exception caught while processing parameter %s for staff %s: %s\n", param.key, staff.name, e.what());
+                continue;
+            }
+        }
+
+        try {
+            interp->Fill(map);
+        } catch(std::exception e) {
+            fprintf(stderr, "Exception caught while filling %s: %s\n", staff.name, e.what());
+            continue;
+        }
+    }
+
+    PpFile_free(fileHead);
+
+    std::vector<std::shared_ptr<ABlock>> blocks;
+    for(auto&& block : map) {
+        blocks.push_back(block->Block());
+    }
+
+    auto&& found = std::find_if(blocks.begin(), blocks.end(),
+            [](decltype(blocks)::value_type v) -> bool {
+                auto p = std::dynamic_pointer_cast<Output>(v);
+                return (bool)p;
+            });
+    auto&& out = *found;
+
+    auto cycle = [&out, &blocks]() {
+        for(auto&& b : blocks) b->Tick1();
+        for(auto&& b : blocks) b->Tick2();
+        for(auto&& b : blocks) b->Tick3();
+        double sample = out->Value();
+        // TODO when do I know when to end????
+        //      should be determined from parsing
+        //      i.e. reduce NotesInterpreter::StaffDuration(), max(*)
+    };
+}
 
 int main(int argc, char* argv[])
 {
