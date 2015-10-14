@@ -75,7 +75,7 @@ struct TypeStream
     }
 
     inline bool bad() { return values_.empty(); }
-    inline bool good() { return !bad() && !failed(); }
+    inline bool good() { return !bad() && !fail(); }
     inline bool fail() { return failed_; }
     inline bool eof() { return values_.empty(); }
     inline bool operator!() { return fail(); }

@@ -14,7 +14,12 @@ struct LookupMap_t
     typedef std::string key_type;
     typedef std::shared_ptr<ABlock> mapped_type;
     std::vector<std::shared_ptr<IInstanceInterpreter>> data_;
+    typedef decltype(data_)::const_iterator iterator;
+    typedef decltype(data_)::const_iterator const_iterator;
     mapped_type at(key_type name) const;
+    iterator find(key_type name) const;
+    iterator end() const { return data_.end(); }
+    iterator begin() const { return data_.begin(); }
 };
 typedef std::function<void(LookupMap_t)> DelayedLookup_fn;
 

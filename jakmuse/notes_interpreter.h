@@ -7,7 +7,7 @@
 
 struct ANotesInterpreter
 {
-    virtual ~INotesInterpreter() {}
+    virtual ~ANotesInterpreter() {}
     std::string name_;
     virtual void Fill(LookupMap_t const&) =0;
     virtual void AcceptParameter(std::string paramName, PpValue value) =0;
@@ -32,7 +32,7 @@ struct NotesInterpreter
     {}
 
     void Fill(LookupMap_t const&) override;
-    void AcceptParameter(std::stirng paramName, PpValue value) override;
+    void AcceptParameter(std::string paramName, PpValue value) override;
 };
 
 struct PCMInterpreter
@@ -50,7 +50,7 @@ struct PCMInterpreter
     {}
 
     void Fill(LookupMap_t const&) override;
-    void AcceptParameter(std::stirng paramName, PpValue value) override;
+    void AcceptParameter(std::string paramName, PpValue value) override;
 
 };
 

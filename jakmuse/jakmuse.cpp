@@ -1,4 +1,7 @@
 #include "blocks_interpreter.h"
+#include "notes_interpreter.h"
+#include "parser_types.h"
+#include <cstdio>
 
 int main(int argc, char* argv[])
 {
@@ -24,6 +27,36 @@ int main(int argc, char* argv[])
         (void) blocks[4]->AcceptParameter("Exception", v);
     } catch(std::invalid_argument e) {
         fprintf(stderr, "Exception caught for X3 param Exception value whatever: %s\n", e.what());
+    }
+    /////////////////////////////
+    auto ni = GetNotesInterpreter("NOTES", "I1");
+    v.type = PpValue::PpNOTE;
+    v.note.duration = 12;
+    v.note.value = 0.5;
+    PpValue lh;
+    lh.type = PpValue::PpLIST;
+    PpValueList n1, n2;
+    lh.list = &n1;
+    n1.value = v;
+    n1.next = &n2;
+    n2.value = v;
+    n2.next = nullptr;
+    ni->AcceptParameter("Notes", lh);
+    LookupMap_t map;
+    map.data_.assign(blocks, blocks + (sizeof(blocks)/sizeof(blocks[0])));
+    ni->Fill(map);
+
+    auto&& stream = blocks[0]->InputBuffer();
+    std::remove_reference<decltype(stream)>::type::value_type x1, x2;
+    stream >> x1 >> x2;
+    printf("%d\n", stream.good());
+    printf("%lf %lf\n", std::get<1>(x1), std::get<1>(x2));
+
+
+    try {
+        GetNotesInterpreter("PCM", "F1")->Fill(map);
+    } catch(std::exception e) {
+        printf("Caught exception: %s\n", e.what());
     }
     // END TEST CODE
 }

@@ -444,6 +444,15 @@ LookupMap_t::mapped_type LookupMap_t::at(LookupMap_t::key_type name) const
     return (*found)->Block();
 }
 
+LookupMap_t::iterator LookupMap_t::find(LookupMap_t::key_type name) const
+{
+    auto&& found = std::find_if(data_.begin(), data_.end(),
+            [name](value_type const& v) -> bool {
+                return v->Name().compare(name) == 0;
+            });
+    return found;
+}
+
 template<>
 CannonicalStream& InstanceInterpreter<Input>::InputBuffer()
 {
