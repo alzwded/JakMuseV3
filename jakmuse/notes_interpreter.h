@@ -11,6 +11,7 @@ struct ANotesInterpreter
     std::string name_;
     virtual void Fill(LookupMap_t const&) =0;
     virtual void AcceptParameter(std::string paramName, PpValue value) =0;
+    virtual size_t Duration() const =0;
 
     ANotesInterpreter(std::string name)
         : name_(name)
@@ -33,6 +34,7 @@ struct NotesInterpreter
 
     void Fill(LookupMap_t const&) override;
     void AcceptParameter(std::string paramName, PpValue value) override;
+    size_t Duration() const;
 };
 
 struct PCMInterpreter
@@ -51,7 +53,7 @@ struct PCMInterpreter
 
     void Fill(LookupMap_t const&) override;
     void AcceptParameter(std::string paramName, PpValue value) override;
-
+    size_t Duration() const;
 };
 
 #endif

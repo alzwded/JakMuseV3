@@ -18,6 +18,28 @@ GetNotesInterpreter(std::string instanceType, std::string name)
     }
 }
 
+size_t ComputeDuration(int divisor, std::vector<Note> const& notes)
+{
+    if(divisor <= 0) return 0;
+    size_t m = 0;
+    m = std::accumulate(notes.begin(), notes.end(), m,
+            [](size_t m, Note const& n) -> size_t {
+                if(n.duration <= 0) return m;
+                else return m + n.duration;
+            });
+    return 44100.0 / divisor * m;
+}
+
+size_t NotesInterpreter::Duration() const
+{
+    return ComputeDuration(divisor, notes);
+}
+
+size_t PCMInterpreter::Duration() const
+{
+    return ComputeDuration(stride, notes);
+}
+
 void NotesInterpreter::Fill(LookupMap_t const& map)
 {
     auto&& foundIt = map.find(name_);

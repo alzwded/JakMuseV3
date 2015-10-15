@@ -117,6 +117,7 @@ void sketch()
 
     for(auto&& f : delayedLookups) f(map);
 
+    size_t maxDuration = 0;
     for(PpStaffList* p = fileHead.staves; p; p = p->next) {
         PpStaff staff = p->value;
 
@@ -148,6 +149,8 @@ void sketch()
             fprintf(stderr, "Exception caught while filling %s: %s\n", staff.name, e.what());
             continue;
         }
+
+        maxDuration = std::max(maxDuration, interp->Duration());
     }
 
     PpFile_free(fileHead);
@@ -169,10 +172,11 @@ void sketch()
         for(auto&& b : blocks) b->Tick2();
         for(auto&& b : blocks) b->Tick3();
         double sample = out->Value();
-        // TODO when do I know when to end????
-        //      should be determined from parsing
-        //      i.e. reduce NotesInterpreter::StaffDuration(), max(*)
     };
+
+    for(size_t i = 0; i < maxDuration; ++i) {
+        cycle();
+    }
 }
 
 int main(int argc, char* argv[])
