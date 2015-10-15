@@ -239,7 +239,7 @@ static void processArgs(int& argc, char* argv[])
         std::string thing = argv[i];
         if(thing.compare(0, 2, "-w") == 0) {
             std::string tenta = thing.substr(2);
-            if(thing.size()) {
+            if(tenta.size()) {
                 options.outfile = tenta;
             } else {
                 if(i == argc) usage();
@@ -247,6 +247,8 @@ static void processArgs(int& argc, char* argv[])
                 thing.assign(argv[i]);
                 options.outfile = thing;
             }
+        } else if(thing.compare("--crash") == 0) {
+            throw 1;
         } else if(thing.compare("-h") == 0) {
             usage();
         } else if(thing.compare(0, 2, "-i") == 0) {

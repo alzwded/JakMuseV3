@@ -113,7 +113,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             continue;
         }
 
-        if(isspace(c) || isblank(c) || c == 10 || c == 13 || c == ',') {
+        if(isspace(wc) || isblank(wc) || c == 10 || c == 13 || c == ',') {
             if(text.str().empty()) {
                 LOG("Skipping whitespace");
                 (void) fin.get();

@@ -3,6 +3,7 @@ CC = cl.exe
 GLUTROOT = ..\freeglut
 LEMONROOT = ..\vendor\lemon
 CFLAGS = /Ot /c /EHsc /I. /Zi /arch:SSE2 /DVERSION=$(VERSION)
+#CFLAGS = /c /EHsc /I. /Zi /arch:SSE2 /DVERSION=$(VERSION) /RTC1 /analyze  /Ge /GS /Gs
 LD = link.exe
 LDOPTS = /OUT:jakmuse.exe /DEBUG /PDB:jakmuse.pdb
 LIBS = 

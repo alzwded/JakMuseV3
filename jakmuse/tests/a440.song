@@ -1,0 +1,30 @@
+SECTION INSTANCES
+    OUTPUT {
+        IN = [ Fltr ]
+    }
+
+    A440 Generator {
+        IN = [ I1 ],
+        WT = [ 1, -1 ],
+        Interpolation = Cosine,
+        Glide = 0
+    }
+
+    Fltr Filter {
+        IN = [ A440 ],
+        A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
+        Mixing = Cut,
+        Low = 0, High = 22050, K = 500
+    }
+
+    I1 Input {
+        RST = [Fltr]
+    }
+END SECTION
+
+SECTION NOTES
+    I1 NOTES {
+        Divisor = 1,
+        Notes = [ 2A4 ]
+    }
+END SECTION

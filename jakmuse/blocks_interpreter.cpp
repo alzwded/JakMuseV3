@@ -156,7 +156,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
                     case PpValue::PpSTRING:
                         {
                             std::string name;
-                            name.assign(value.str);
+                            name.assign(v.str);
                             thing_sp thing = thing_;
                             fns.push_back([thing, name](LookupMap_t const& map) {
                                         thing->Inputs().push_back(map.at(name));
@@ -288,7 +288,7 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
                     case PpValue::PpSTRING:
                         {
                             std::string name;
-                            name.assign(value.str);
+                            name.assign(v.str);
                             thing_sp thing = thing_;
                             fns.push_back([thing, name](LookupMap_t const& map) {
                                         thing->Inputs().push_back(map.at(name));
@@ -421,7 +421,7 @@ InstanceInterpreter<Noise>::AcceptParameter(std::string paramName, PpValue value
                     case PpValue::PpSTRING:
                         {
                             std::string name;
-                            name.assign(value.str);
+                            name.assign(v.str);
                             thing_sp thing = thing_;
                             fns.push_back([thing, name](LookupMap_t const& map) {
                                         thing->Inputs().push_back(map.at(name));
@@ -480,7 +480,7 @@ InstanceInterpreter<Output>::AcceptParameter(
                     case PpValue::PpSTRING:
                         {
                             std::string name;
-                            name.assign(value.str);
+                            name.assign(v.str);
                             thing_sp thing = thing_;
                             fns.push_back([thing, name](LookupMap_t const& map) {
                                         thing->Inputs().push_back(map.at(name));

@@ -126,9 +126,9 @@ instance_list(R) ::= instance_list(head) instance(curr). {
 }
 
 instance(R) ::= OUTPUT param_list(LEparams). {
-    static const char* output = "Output";
+    static const char output[] = "Output";
     R.name = NULL;
-    R.type = (char*)malloc(sizeof(char) * (sizeof(output)/sizeof(char) + 1));
+    R.type = (char*)malloc(sizeof(char) * (sizeof(output)/sizeof(output[0]) + 1));
     strcpy(R.type, output);
     R.params = LEparams;
 }
