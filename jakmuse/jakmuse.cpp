@@ -2,7 +2,17 @@
 #include "notes_interpreter.h"
 #include "parser_types.h"
 #include <cstdio>
+#include <ios>
 #include <iostream>
+#include <fstream>
+
+static struct {
+    std::string outfile;
+    std::string infile;
+} options = {
+    "-",
+    "-"
+};
 
 extern bool GetNextToken(std::istream&, int&, char*&);
 extern void* ParseAlloc(void* (*)(size_t));
@@ -71,7 +81,7 @@ static void PpFile_free(PpFile f)
     }
 }
 
-void sketch()
+void sketch(std::istream& fin)
 {
     void* pParser;
     char* sToken;
@@ -80,7 +90,7 @@ void sketch()
 
     pParser = ParseAlloc(malloc);
     ParseTrace(stderr, "Parser:    ");
-    while(GetNextToken(std::cin, hTokenId, sToken)) {
+    while(GetNextToken(fin, hTokenId, sToken)) {
         Parse(pParser, hTokenId, sToken, &fileHead);
     }
     Parse(pParser, 0, sToken, &fileHead);
@@ -179,58 +189,66 @@ void sketch()
     }
 }
 
+#ifdef _MSC_VER
+__declspec(noreturn)
+#endif
+static void usage()
+#ifdef __GNUC__
+__attribute__((noreturn))
+#endif
+{
+    printf("jakmuse [-i infile] [-w out.wav]\n");
+    exit(1);
+}
+
+static void processArgs(int& argc, char* argv[])
+{
+    for(int i = 1; i < argc; ++i) {
+        std::string thing = argv[i];
+        if(thing.compare(0, 2, "-w") == 0) {
+            std::string tenta = thing.substr(2);
+            if(thing.size()) {
+                options.outfile = tenta;
+            } else {
+                if(i == argc) usage();
+                ++i;
+                thing.assign(argv[i]);
+                options.outfile = thing;
+            }
+        } else if(thing.compare("-h") == 0) {
+            usage();
+        } else if(thing.compare(0, 2, "-i") == 0) {
+            std::string tenta = thing.substr(2);
+            if(tenta.empty()) {
+                if(i == argc) usage();
+                ++i;
+                thing.assign(argv[i]);
+                options.infile = thing;
+            } else {
+                options.infile = tenta;
+            }
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
-    // BEGIN TEST CODE
-    std::shared_ptr<IInstanceInterpreter> blocks[] = {
-        GetInterpreter("Input", "I1"),
-        GetInterpreter("Filter", "F1"),
-        GetInterpreter("Generator", "G1"),
-        GetInterpreter("Noise", "N1"),
-        GetInterpreter("Delay", "D1"),
-        GetInterpreter("Constant", "C1")
-    };
-    PpValue v;
-    v.type = PpValue::PpSTRING;
-    v.str = "X1";
-    auto l1 = blocks[0]->AcceptParameter("RST", v);
-    auto l2 = blocks[1]->AcceptParameter("A", v);
-    auto l3 = blocks[2]->AcceptParameter("Glide", v);
-    auto l4 = blocks[3]->AcceptParameter("IN", v);
-    v.type = PpValue::PpNUMBER;
-    auto l5 = blocks[5]->AcceptParameter("Value", v);
+#ifndef VERSION
+# define VERSION unbekannt
+#endif
+#define QUOTE_HELPER(X) #X
+#define QUOTE(X) QUOTE_HELPER(X)
+    printf("jakmuse v3.%s\n", QUOTE(VERSION));
+    processArgs(argc, argv);
     try {
-        (void) blocks[4]->AcceptParameter("Exception", v);
-    } catch(std::invalid_argument e) {
-        fprintf(stderr, "Exception caught for X3 param Exception value whatever: %s\n", e.what());
-    }
-    /////////////////////////////
-    auto ni = GetNotesInterpreter("NOTES", "I1");
-    v.type = PpValue::PpNOTE;
-    v.note.duration = 12;
-    v.note.value = 0.5;
-    PpValue lh;
-    lh.type = PpValue::PpLIST;
-    PpValueList n1, n2;
-    lh.list = &n1;
-    n1.value = v;
-    n1.next = &n2;
-    n2.value = v;
-    n2.next = nullptr;
-    ni->AcceptParameter("Notes", lh);
-    LookupMap_t map;
-    map.data_.assign(blocks, blocks + (sizeof(blocks)/sizeof(blocks[0])));
-    ni->Fill(map);
-
-    auto&& stream = blocks[0]->InputBuffer();
-    std::remove_reference<decltype(stream)>::type::value_type x1, x2;
-    stream >> x1 >> x2;
-    printf("%d\n", stream.good());
-    printf("%lf %lf\n", std::get<1>(x1), std::get<1>(x2));
-
-
-    try {
-        GetNotesInterpreter("PCM", "F1")->Fill(map);
+        std::istream* fin = nullptr;
+        if(!options.infile.empty() && options.infile.compare("-") != 0) {
+            fin = new std::fstream(options.infile, std::ios::in);
+            fin->exceptions(std::ios::failbit|std::ios::badbit);
+        }
+        sketch(fin ? *fin : std::cin);
+        if(fin) delete fin;
+        // TODO write output
     } catch(std::exception e) {
         printf("Caught exception: %s\n", e.what());
     }
