@@ -46,7 +46,7 @@ struct WaveTable
         TRUNCATE,
         LINEAR,
         COSINE
-    } interpolationMethod_;
+    } interpolationMethod_ = TRUNCATE;
 
     double Value(double idx);
 
@@ -183,11 +183,11 @@ struct Filter
     std::shared_ptr<ABlock> D;
     std::shared_ptr<ABlock> S;
     std::shared_ptr<ABlock> R;
-    bool ResetADSR;
-    bool InvertADSR;
+    bool ResetADSR = true;
+    bool InvertADSR = false;
     std::shared_ptr<ABlock> Hi;
     std::shared_ptr<ABlock> Lo;
-    enum { Cut, Flatten } mixing_;
+    enum { Cut, Flatten } mixing_ = Cut;
 
     void ResetTick(ResetKind) override;
 
@@ -210,7 +210,7 @@ private:
         SUSTAIN,
         RELEASE,
         REST
-    } state;
+    } state = REST;
     int ADSR_counter = 0;
     double loY = 0.0;
     double hiX = 0.0;
@@ -279,7 +279,7 @@ protected:
     double NextValue_(double x) override;
 
 private:
-    int counter, goal;
+    int counter = 0, goal = 0;
     std::vector<unsigned> regs = std::vector<unsigned>{ 0xA001, 0xA001 }; // vs2013 RTM generates C2797 for some reason, so explicitly call list initializer; updates don't; yeah, it's one of those things
     static const unsigned polys[2];
 };
@@ -288,7 +288,7 @@ struct Output
 : public ABlock
 {
     void ResetTick(ResetKind) override {}
-    enum { Cut, Flatten } mixing_;
+    enum { Cut, Flatten } mixing_ = Cut;
 
 protected:
     double NextValue_(double) override;

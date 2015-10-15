@@ -224,7 +224,7 @@ double Filter::ApplyEnvelope(double x)
             /*FALLTHROUGH*/
         }
     case REST:
-        return 0;
+        return 0; // TODO everywhere: 0.5 is actually 0; 0.0 is actually -1
     default:
 #define INVALID_STATE false
         assert(INVALID_STATE);
@@ -246,7 +246,7 @@ double Filter::NextValue_(double in)
         if(r3 < 0.0) return 0.0;
         return r3;
     case Flatten:
-        return (atan(r3 * 2.0 - 1.0) + 1.0) / 2.0;
+        return (tanh(r3 * 2.0 - 1.0) + 1.0) / 2.0;
     default:
 #define UNKNOWN_MIXING_TYPE false
         assert(UNKNOWN_MIXING_TYPE);
@@ -328,7 +328,16 @@ double Input::NextValue_(double)
 
 double Output::NextValue_(double i)
 {
-    return atan(2.0 * i - 1.0);
+    switch(mixing_)
+    {
+    case Output::Cut: return 2.0 * i - 1.0;
+    case Output::Flatten: return tanh(2.0 * i - 1.0);
+    default:
+#define INVALID_MIXING_TYPE false
+        assert(INVALID_MIXING_TYPE);
+        return 0.0;
+#undef INVALID_MIXING_TYPE
+    }
 }
 
 // ===========================================================
