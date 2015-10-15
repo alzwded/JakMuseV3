@@ -105,6 +105,14 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
         LOG("Considering %c", c);
 
+        if(c == '#') {
+            LOG("Skipping comment until EOL");
+            (void) fin.get();
+            while(wc = fin.get(), wc != 10 && wc != 13 && wc != EOF)
+                ;
+            continue;
+        }
+
         if(isspace(c) || isblank(c) || c == 10 || c == 13 || c == ',') {
             if(text.str().empty()) {
                 LOG("Skipping whitespace");
