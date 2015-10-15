@@ -81,7 +81,7 @@ static void PpFile_free(PpFile f)
     }
 }
 
-void sketch(std::istream& fin)
+std::tuple<std::function<float(void)>, size_t> sketch(std::istream& fin)
 {
     void* pParser;
     char* sToken;
@@ -103,7 +103,7 @@ void sketch(std::istream& fin)
         PpInstance instance = p->value;
         std::remove_reference<decltype(GetInterpreter(instance.type, instance.name))>::type interp;
         try {
-            interp = GetInterpreter(instance.type, instance.name);
+            interp = GetInterpreter(instance.type, (instance.name) ? instance.name : "OUTPUT");
         } catch(std::exception e) {
             fprintf(stderr, "Exception when instantiating %s: %s\n", instance.name, e.what());
             continue;
@@ -175,18 +175,24 @@ void sketch(std::istream& fin)
                 auto p = std::dynamic_pointer_cast<Output>(v);
                 return (bool)p;
             });
+    if(found == blocks.end()) {
+        throw std::runtime_error("Output block not defined.");
+    }
     auto&& out = *found;
 
-    auto cycle = [&out, &blocks]() {
+    auto cycle = [out, blocks]() mutable -> float {
         for(auto&& b : blocks) b->Tick1();
         for(auto&& b : blocks) b->Tick2();
         for(auto&& b : blocks) b->Tick3();
-        double sample = out->Value();
+        double dvalue = out->Value(); // -1..1
+        return dvalue;
     };
 
-    for(size_t i = 0; i < maxDuration; ++i) {
-        cycle();
-    }
+    return std::make_tuple(cycle, maxDuration);
+
+    //for(size_t i = 0; i < maxDuration; ++i) {
+    //    doStuffWithSample(cycle());
+    //}
 }
 
 #ifdef _MSC_VER
@@ -246,9 +252,21 @@ int main(int argc, char* argv[])
             fin = new std::fstream(options.infile, std::ios::in);
             fin->exceptions(std::ios::failbit|std::ios::badbit);
         }
-        sketch(fin ? *fin : std::cin);
+        auto&& op = sketch(fin ? *fin : std::cin);
         if(fin) delete fin;
-        // TODO write output
+
+        if(options.outfile.empty() || options.outfile.compare("-") == 0) {
+            throw std::invalid_argument("Not implemented: stdout output");
+        } else {
+            std::vector<float> wav;
+
+            for(size_t i = 0; i < std::get<1>(op); ++i) {
+                wav.push_back(std::get<0>(op)());
+            }
+
+            extern void wav_write_file(std::string const&, std::vector<float> const&, unsigned);
+            wav_write_file(options.outfile, wav, 44100);
+        }
     } catch(std::exception e) {
         printf("Caught exception: %s\n", e.what());
     }

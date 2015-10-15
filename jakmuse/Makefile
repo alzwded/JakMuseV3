@@ -9,7 +9,7 @@ LIBS =
 
 .SUFFIXES:.cpp .hpp .h .obj
 
-OBJS = tokenizer.obj parser.obj blocks.obj blocks_interpreter.obj notes_interpreter.obj jakmuse.obj
+OBJS = tokenizer.obj parser.obj blocks.obj blocks_interpreter.obj notes_interpreter.obj jakmuse.obj jakmuse_wave.obj
 
 jakmuse.exe: $(OBJS)
 	$(LD) $(LDOPTS) $(OBJS) $(LIBS)

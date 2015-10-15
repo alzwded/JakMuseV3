@@ -6,6 +6,7 @@ template struct InstanceInterpreter<Filter>;
 template struct InstanceInterpreter<Input>;
 template struct InstanceInterpreter<Delay>;
 template struct InstanceInterpreter<Noise>;
+template struct InstanceInterpreter<Output>;
 
 std::shared_ptr<IInstanceInterpreter> GetInterpreter(std::string instanceType, std::string name)
 {
@@ -25,6 +26,7 @@ std::shared_ptr<IInstanceInterpreter> GetInterpreter(std::string instanceType, s
         DECLARE_INSTANCE(Filter);
         DECLARE_INSTANCE(Delay);
         DECLARE_INSTANCE(Noise);
+        DECLARE_INSTANCE(Output);
     } INSTANCE_DECLARATION_END();
 
 #undef INSTANCE_DECLARATION_START
@@ -432,6 +434,76 @@ InstanceInterpreter<Noise>::AcceptParameter(std::string paramName, PpValue value
         }
     }
     throw std::invalid_argument("Noise: paramName: expecting Type or IN");
+}
+
+template<>
+DelayedLookup_fn
+InstanceInterpreter<Output>::AcceptParameter(
+        std::string paramName,
+        PpValue value)
+{
+    if(paramName.compare("IN") == 0) {
+        switch(value.type) {
+        case PpValue::PpLIST:
+            {
+                thing_->Inputs().clear();
+                std::deque<DelayedLookup_fn> fns;
+                for(PpValueList* p = value.list; p; p = p->next) {
+                    PpValue v = p->value;
+                    switch(v.type) {
+                    case PpValue::PpSTRING:
+                        {
+                            std::string name;
+                            name.assign(value.str);
+                            thing_sp thing = thing_;
+                            fns.push_back([thing, name](LookupMap_t const& map) {
+                                        thing->Inputs().push_back(map.at(name));
+                                    });
+                        }
+                        break;
+                    default:
+                        throw std::invalid_argument("value: expected STRING or LIST of STRINGs or NUMBER");
+                    }
+                }
+                return [fns](LookupMap_t const& map) {
+                    for(auto&& fn : fns) fn(map);
+                };
+            }
+            break;
+        case PpValue::PpSTRING:
+            {
+                thing_->Inputs().clear();
+                std::string name;
+                name.assign(value.str);
+                std::shared_ptr<thing_t> thing = thing_;
+                return [thing, name](LookupMap_t const& map) {
+                    thing->Inputs().push_back(map.at(name));
+                };
+            }
+        default:
+            throw std::invalid_argument("IN: value: expecting LIST of STRINGs or STRING");
+        }
+    } else if(paramName.compare("Mixing") == 0) {
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string s;
+                s.assign(value.str);
+                if(s.compare("Cut") == 0) {
+                    thing_->mixing_ = Output::Cut;
+                } else if(s.compare("Flatten") == 0) {
+                    thing_->mixing_ = Output::Flatten;
+                } else {
+                    throw std::invalid_argument("Output: Mixing: expecting Cut or Flatten");
+                }
+            }
+            return nullptr;
+        default:
+            throw std::invalid_argument("Output: Mixing: expecting a STRING");
+        }
+    } else {
+        throw std::invalid_argument("paramName: Expecting Mixing, IN");
+    }
 }
 
 LookupMap_t::mapped_type LookupMap_t::at(LookupMap_t::key_type name) const

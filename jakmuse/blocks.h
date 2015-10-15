@@ -262,6 +262,7 @@ struct Output
 : public ABlock
 {
     void ResetTick(ResetKind) override {}
+    enum { Cut, Flatten } mixing_;
 
 protected:
     double NextValue_(double) override;
