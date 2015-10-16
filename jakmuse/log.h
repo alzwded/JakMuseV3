@@ -35,7 +35,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #if 1
 #define LOG(F, ...) do{\
-    fprintf(stderr, __FILE__ ":" __func__ ":" LOGQ(__LINE__) ":    " F "\n", \
+    fprintf(stderr, __FILE__ ":" "%s" ":" LOGQ(__LINE__) ":    " F "\n", \
+            __func__, \
             __VA_ARGS__); \
 }while(0)
 #else

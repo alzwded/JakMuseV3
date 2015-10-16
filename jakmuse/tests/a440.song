@@ -1,7 +1,7 @@
 SECTION INSTANCES
     OUTPUT {
-        IN = [ Fltr ]
-        #IN = [A440]
+        IN = [ Fltr ],
+        Mixing = Flatte
     }
 
     A440 Generator {
