@@ -263,10 +263,14 @@ private:
 struct Delay
 : public ABlock
 {
-    void ResetTick(ResetKind) override {}
+    void ResetTick(ResetKind) override;
+    size_t delay_ = 0;
 
 protected:
-    double NextValue_(double x) override { return x; }
+    double NextValue_(double x) override;
+
+private:
+    std::deque<double> buffer_;
 };
 
 struct Noise

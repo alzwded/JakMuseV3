@@ -224,18 +224,19 @@ double Filter::ApplyEnvelope(double x)
             /*FALLTHROUGH*/
         }
     case REST:
-        return 0; // TODO everywhere: 0.5 is actually 0; 0.0 is actually -1
+        return 0.5;
     default:
 #define INVALID_STATE false
         assert(INVALID_STATE);
-        return 0;
+        return 0.5;
 #undef INVALID_STATE
     }
 }
 
 double Filter::NextValue_(double in)
 {
-    double r0 = ApplyLowPassFilter(in);
+    double normalized = 2.0 * in - 1.0;
+    double r0 = ApplyLowPassFilter(normalized);
     double r1 = ApplyHighPassFilter(r0);
     double r2 = ApplyEnvelope(r1);
     assert(K);
@@ -243,14 +244,14 @@ double Filter::NextValue_(double in)
     switch(mixing_) {
     case Cut:
         if(r3 > 1.0) return 1.0;
-        if(r3 < 0.0) return 0.0;
-        return r3;
+        if(r3 < -1.0) return 0.0;
+        return (r3 + 1.0) / 2.0;
     case Flatten:
-        return (tanh(r3 * 2.0 - 1.0) + 1.0) / 2.0;
+        return (tanh(r3) + 1.0) / 2.0;
     default:
 #define UNKNOWN_MIXING_TYPE false
         assert(UNKNOWN_MIXING_TYPE);
-        return 0.0;
+        return 0.5;
 #undef UNKNOWN_MIXING_TYPE
     }
 }
@@ -275,6 +276,7 @@ void Generator::ResetTick(ResetKind kind)
 
 double Generator::NextValue_(double in)
 {
+    printf("!!! %f\n", in);
     double newF = 22050.0 * in;
     if(NGlide) {
         F = F + (newF - F) / NGlide;
@@ -283,7 +285,8 @@ double Generator::NextValue_(double in)
         F = newF;
     }
     PA.Tick(F);
-    return WT.Value(PA.Value() / 44100.0);
+    printf(">>> %f %f\n", PA.Value(), (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0);
+    return (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0;
 }
 
 // ===========================================================
@@ -328,6 +331,7 @@ double Input::NextValue_(double)
 
 double Output::NextValue_(double i)
 {
+    printf("Ouptut: %f\n", 2.0 * i - 1.0);
     switch(mixing_)
     {
     case Output::Cut: return 2.0 * i - 1.0;
@@ -335,7 +339,7 @@ double Output::NextValue_(double i)
     default:
 #define INVALID_MIXING_TYPE false
         assert(INVALID_MIXING_TYPE);
-        return 0.0;
+        return 0.5;
 #undef INVALID_MIXING_TYPE
     }
 }
@@ -346,13 +350,19 @@ double Output::NextValue_(double i)
 
 double WaveTable::Value(double idx)
 {
+    printf("WT: %f", idx);
     if(idx < 0.0) idx = 0.0;
-    if(idx > 1.0) idx = 1.0;
+    if(idx > 1.0 - 1.0e-15) idx = 1.0;
+    printf(" %f", idx);
 
-    double normalized = idx * table_.size();
+    double normalized = idx * (table_.size() - 1); // don't loop around; enables sawtooth
+    printf(" %d %f\n", table_.size(), normalized);
 
     if(normalized - trunc(normalized) < 1.0e-15) {
         int i = (int)normalized;
+        return table_[i];
+    } else if(ceil(normalized) - normalized < 1.0e-15) {
+        int i = (int)ceil(normalized);
         return table_[i];
     } else {
         int i1 = (int)floor(normalized);
@@ -392,7 +402,9 @@ void PhaseAccumulator::Tick(double in)
 {
     double F = in;
     if(fabs(F) < 1.0e-15) return;
+    printf("))) %f %f", phi, F);
     phi = fmod(phi + F, 44100.0);
+    printf(" %f\n", phi);
 }
 
 double PhaseAccumulator::Value()
@@ -429,7 +441,7 @@ void Noise::ResetTick(ResetKind kind)
 
 double Noise::NextValue_(double)
 {
-    if(goal < 0) return 0;
+    if(goal < 0) return 0.5;
 
     switch(type_) {
     case EIGHT: return (double)regs[0] / 0xFFFF;
@@ -437,7 +449,28 @@ double Noise::NextValue_(double)
     default:
 #define INVALID_NOISE_TYPE false
         assert(INVALID_NOISE_TYPE);
-        return 0;
+        return 0.5;
 #undef INVALID_NOISE_TYPE
+    }
+}
+
+// ===========================================================
+// Delay
+// ===========================================================
+
+void Delay::ResetTick(ResetKind kind)
+{
+    buffer_.clear();
+}
+
+double Delay::NextValue_(double x)
+{
+    buffer_.push_front(x);
+    if(buffer_.size() >= delay_) {
+        auto ret = buffer_.back();
+        buffer_.pop_back();
+        return ret;
+    } else {
+        return 0.5;
     }
 }

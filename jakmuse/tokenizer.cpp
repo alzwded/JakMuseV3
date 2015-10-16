@@ -32,6 +32,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <istream>
 #include <sstream>
 
+static signed TranslateNote(char name)
+{
+    switch(name) {
+    case 'C': return 0;
+    case 'D': return 2;
+    case 'E': return 4;
+    case 'F': return 5;
+    case 'G': return 7;
+    case 'A': return 9;
+    case 'B': return 11;
+    }
+
+    // never reached
+    return 0;
+}
+
+static double GetFrequency(char name, signed scale, char accidental)
+{
+    signed Ascale = 4;
+    signed A = 9;
+    signed note = TranslateNote(name);
+
+    signed step = (scale - Ascale) * 12 + note - A;
+
+    switch(accidental) {
+    case '#':
+        ++step;
+        break;
+    case 'b':
+        --step;
+        break;
+    default:
+        break;
+    }
+
+    return (440.0 * std::pow(2.0, (double)step / 12.0));
+}
+
 bool TryParseNote(const char* s, Note* n)
 {
     std::string text;
@@ -78,7 +116,7 @@ bool TryParseNote(const char* s, Note* n)
     }
 
     n->duration = atoi(number.c_str());
-    n->value = 0; // TODO computation
+    n->value = GetFrequency(noteName, height - '0', sharp) / 22050.0;
 
     return true;
 }
@@ -221,9 +259,11 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
         return true;
     }
 
-    if(std::all_of(&stext[0], &stext[0] + stext.size(), [](char c) -> bool {
+    if(std::all_of(&stext[1], &stext[0] + stext.size(), [](char c) -> bool {
                     return c >= '0' && c <= '9';
-                })) {
+                })
+            && ((stext[0] >= '0' && stext[0] <= '9') || stext[0] == '-')
+    ) {
         LOG("NUMBER");
         AssignString(text.str(), sToken);
         hTokenId = NUMBER;

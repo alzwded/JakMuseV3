@@ -91,11 +91,13 @@ InstanceInterpreter<Generator>::AcceptParameter(
                     switch(v.type) {
                     case PpValue::PpNUMBER:
                         thing_->WT.table_.push_back(v.num);
-                        return nullptr;
+                        printf("WT parse: %d\n", v.num);
+                        break;
                     default:
                         throw std::invalid_argument("WT: value: Expecing a LIST of NUMBERs");
                     }
                 }
+                return nullptr;
             }
         default:
             throw std::invalid_argument("WT: value: Expecing a LIST of NUMBERs");
@@ -383,7 +385,18 @@ template<>
 DelayedLookup_fn
 InstanceInterpreter<Delay>::AcceptParameter(std::string paramName, PpValue value)
 {
-    throw std::invalid_argument("Delay: not expecting any parameters");
+    if(paramName.compare("Amount") == 0) {
+        switch(value.type) {
+        case PpValue::PpNUMBER:
+            if(value.num > 2550) throw std::invalid_argument("Delay: Amount: should be between 0 and 2550");
+            thing_->delay_ = value.num;
+            return nullptr;
+        default:
+            throw std::invalid_argument("Delay: Amount: expecting a NUMBER");
+        }
+    } else {
+        throw std::invalid_argument("Delay: unknown param; expecting Amount");
+    }
 }
 
 template<>

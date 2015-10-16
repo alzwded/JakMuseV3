@@ -1,11 +1,12 @@
 SECTION INSTANCES
     OUTPUT {
-        IN = [ Fltr ]
+        #IN = [ Fltr ]
+        IN = [A440]
     }
 
     A440 Generator {
         IN = [ I1 ],
-        WT = [ 1, -1 ],
+        WT = [ 1, -1, 1 ],
         Interpolation = Cosine,
         Glide = 0
     }
