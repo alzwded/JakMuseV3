@@ -210,7 +210,7 @@ private:
         SUSTAIN,
         RELEASE,
         REST
-    } state = REST;
+    } state = SUSTAIN;
     int ADSR_counter = 0;
     double loY = 0.0;
     double hiX = 0.0;
@@ -232,6 +232,7 @@ private:
     double F = 0.0;
     int NGlide = 0;
     PhaseAccumulator PA;
+    bool shutUp = false;
 };
 
 struct Input

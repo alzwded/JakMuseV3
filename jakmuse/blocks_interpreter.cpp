@@ -25,6 +25,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "blocks_interpreter.h"
+#include "log.h"
 
 template struct InstanceInterpreter<Constant>;
 template struct InstanceInterpreter<Generator>;
@@ -141,6 +142,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
                 std::shared_ptr<Constant> k(new Constant);
                 k->value_ = (double)value.num / 2550; // FIXME
                 thing_->TGlide = std::dynamic_pointer_cast<ABlock>(k);
+                k->Tick3();
                 return nullptr;
             }
         default:
@@ -189,6 +191,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
                 thing_->Inputs().clear();
                 std::shared_ptr<Constant> k(new Constant);
                 k->value_ = (double)value.num / 22050; // FIXME
+                k->Tick3();
                 thing_->Inputs().push_back(std::dynamic_pointer_cast<ABlock>(k));
                 return nullptr;
             }
@@ -210,7 +213,9 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
             {\
                 std::shared_ptr<Constant> c(new Constant);\
                 c->value_ = (double)value.num / SCALE;\
+                LOG("%s = %f", #PARAM, c->value_); \
                 thing_->PARAM = std::dynamic_pointer_cast<ABlock>(c);\
+                c->Tick3(); /* force buffer transfer */\
                 return nullptr;\
             }\
         case PpValue::PpSTRING:\
@@ -218,6 +223,7 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
                 std::string name;\
                 name.assign(value.str);\
                 auto thing = thing_;\
+                LOG("%s = {%s}", #PARAM, value.str); \
                 return [thing, name](LookupMap_t const& map) {\
                     thing->PARAM = map.at(name);\
                 };\
@@ -321,6 +327,7 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
                 thing_->Inputs().clear();
                 std::shared_ptr<Constant> k(new Constant);
                 k->value_ = (double)value.num / 999.0; // FIXME
+                k->Tick3();
                 thing_->Inputs().push_back(std::dynamic_pointer_cast<ABlock>(k));
                 return nullptr;
             }
@@ -465,6 +472,7 @@ InstanceInterpreter<Noise>::AcceptParameter(std::string paramName, PpValue value
                 thing_->Inputs().clear();
                 std::shared_ptr<Constant> k(new Constant);
                 k->value_ = (double)value.num / 999; // FIXME
+                k->Tick3();
                 thing_->Inputs().push_back(std::dynamic_pointer_cast<ABlock>(k));
                 return nullptr;
             }

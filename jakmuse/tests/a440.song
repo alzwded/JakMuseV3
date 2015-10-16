@@ -1,7 +1,7 @@
 SECTION INSTANCES
     OUTPUT {
-        #IN = [ Fltr ]
-        IN = [A440]
+        IN = [ Fltr ]
+        #IN = [A440]
     }
 
     A440 Generator {
@@ -16,7 +16,7 @@ SECTION INSTANCES
         IN = [ A440 ],
         A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
         Mixing = Cut,
-        Low = 0, High = 22050, K = 500
+        Low = 22050, High = 0, K = 500
     }
 
     I1 Input {

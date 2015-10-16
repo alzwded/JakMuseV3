@@ -26,6 +26,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define _USE_MATH_DEFINES
 #include "blocks.h"
+#include "log.h"
 #include <cmath>
 #include <assert.h>
 
@@ -42,11 +43,13 @@ void Filter::ResetTick(ResetKind kind)
     {
     case ResetKind::NOTE:
         if(ResetADSR) {
+            LOG("* -> ATTACK");
             state = ATTACK;
             ADSR_counter = 0;
         } else {
             switch(state) {
             case REST:
+                LOG("REST -> ATTACK");
                 state = ATTACK;
                 ADSR_counter = 0;
                 break;
@@ -54,6 +57,7 @@ void Filter::ResetTick(ResetKind kind)
                 break;
             case DECAY:
                 {
+                    LOG("DECAY -> ATTACK");
                     state = ATTACK;
                     double r0 = 1.0 - ((double)ADSR_counter / DecayValue());
                     double r2 = SustainValue();
@@ -67,6 +71,7 @@ void Filter::ResetTick(ResetKind kind)
                 break;
             case RELEASE:
                 {
+                    LOG("RELEASE -> ATTACK");
                     state = ATTACK;
                     double r0 = 1.0 - ((double)ADSR_counter / DecayValue());
                     double r2 = ReleaseValue();
@@ -85,9 +90,11 @@ void Filter::ResetTick(ResetKind kind)
                 double r1 = S->Value();
                 double r2 = 1 - r1;
                 if(r0 < r1) {
+                    LOG("ATTACK -> RELEASE");
                     state = RELEASE;
                     ADSR_counter = (int)(r0 * ReleaseValue());
                 } else {
+                    LOG("ATTACK -> reset RELEASE");
                     // TODO lean release
                     state = RELEASE;
                     ADSR_counter = 0;
@@ -102,15 +109,18 @@ void Filter::ResetTick(ResetKind kind)
                 r0 = r0 * r1 + r2;
                 if(r0 > r2) {
                     // TODO lean release
+                    LOG("DECAY -> reset RELEASE");
                     state = RELEASE;
                     ADSR_counter = 0;
                 } else {
+                    LOG("DECAY -> RELEASE");
                     state = RELEASE;
                     ADSR_counter = (int)((1.0 - r0) * ReleaseValue());
                 }
             }
             break;
         case SUSTAIN:
+            LOG("SUSTAIN -> RELEASE");
             state = RELEASE;
             ADSR_counter = 0;
             break;
@@ -138,6 +148,7 @@ int Filter::DecayValue()
 double Filter::SustainValue()
 {
     assert(S);
+    LOG("%f", S->Value());
     return S->Value();
 }
 
@@ -150,8 +161,10 @@ int Filter::ReleaseValue()
 double Filter::ApplyLowPassFilter(double in)
 {
     assert(Lo);
-    double a = Lo->Value();
+    double rc = 1.0 / 2.0 * M_PI * Lo->Value();
+    double a = 1.0 / (rc + 1.0);
     double y = loY + a  * (in - loY);
+    LOG("in %f a %f y %f filtered %f", in, a, loY, y);
     loY = y;
     return y;
 }
@@ -159,8 +172,10 @@ double Filter::ApplyLowPassFilter(double in)
 double Filter::ApplyHighPassFilter(double in)
 {
     assert(Hi);
-    double a = Hi->Value();
+    double rc = 1.0 / 2.0 * M_PI * Hi->Value();
+    double a = 1.0 / (rc + 1.0);
     double y = a * (hiY + in - hiX);
+    LOG("in %f a %f y %f x %f filtered %f", in, a, hiY, hiX, y);
     hiY = y;
     hiX = in;
     return y;
@@ -176,59 +191,68 @@ double Filter::ApplyEnvelope(double x)
             if(InvertADSR) value = 1.0 - value;
             double ret = (value * x);
             ADSR_counter++;
+            LOG("ATTACK a %f x %f ret %f", value, x, ret);
             return ret;
         } else {
+            LOG("ATTACK -> DECAY");
             ADSR_counter = 0;
             state = DECAY;
             /*FALLTHROUGH*/
         }
     case DECAY:
         if(ADSR_counter < DecayValue()) {
-            if(!ResetADSR) {
+            if(!InvertADSR) {
                 double r0 = (1.0 - (double)ADSR_counter / DecayValue());
                 double r2 = SustainValue();
                 double r1 = 1 - r2;
                 r0 = r0 * r1 + r2;
+                LOG("DECAY a %f x %f", r0, x);
                 return (r0 * x);
             } else {
                 double r0 = ((double)ADSR_counter / DecayValue());
                 double r2 = SustainValue();
                 r0 = r0 * r2;
+                LOG("DECAY a %f x %f", r0, x);
                 return (r0 * x);
             }
             ADSR_counter++;
         } else {
+            LOG("DECAY -> SUSTAIN");
             ADSR_counter = 0;
             state = SUSTAIN;
             /*FALLTHROUGH*/
         }
     case SUSTAIN:
+        LOG("SUSTAIN a %f x %f", SustainValue(), x);
         return SustainValue() * x;
     case RELEASE:
         if(ADSR_counter < ReleaseValue()) {
-            if(!ResetADSR) {
+            if(!InvertADSR) {
                 double r0 = (1.0 - (double)ADSR_counter / ReleaseValue());
                 double r2 = SustainValue();
                 r0 = r0 * r2;
+                LOG("RELEASE a %f x %f", r0, x);
                 return r0 * x;
             } else {
                 double r0 = ((double)ADSR_counter / ReleaseValue());
                 double r2 = SustainValue();
                 double r1 = 1.0 - r2;
                 r0 = r0 * r1 + r2;
+                LOG("RELEASE a %f x %f", r0, x);
                 return r0 * x;
             }
         } else {
+            LOG("RELEASE -> REST");
             ADSR_counter = 0;
             state = REST;
             /*FALLTHROUGH*/
         }
     case REST:
-        return 0.5;
+        return 0.0;
     default:
 #define INVALID_STATE false
         assert(INVALID_STATE);
-        return 0.5;
+        return 0.0;
 #undef INVALID_STATE
     }
 }
@@ -241,6 +265,7 @@ double Filter::NextValue_(double in)
     double r2 = ApplyEnvelope(r1);
     assert(K);
     double r3 = K->Value() * r2;
+    LOG("in %f norm %f lo %f hi %f enve %f gain %f", in, normalized, r0, r1, r2, r3);
     switch(mixing_) {
     case Cut:
         if(r3 > 1.0) return 1.0;
@@ -267,25 +292,27 @@ void Generator::ResetTick(ResetKind kind)
     case ResetKind::NOTE:
         assert(TGlide);
         NGlide = TGlide->Value();
+        shutUp = false;
         break;
     case ResetKind::REST:
         NGlide = 0;
+        shutUp = true;
         break;
     }
 }
 
 double Generator::NextValue_(double in)
 {
-    printf("!!! %f\n", in);
+    LOG("in = %f", in);
     double newF = 22050.0 * in;
     if(NGlide) {
         F = F + (newF - F) / NGlide;
         --NGlide;
-    } else {
+    } else if(fabs(newF) > 1.0e-15 || shutUp) {
         F = newF;
     }
     PA.Tick(F);
-    printf(">>> %f %f -> %f\n", PA.Value(), WT.Value(PA.Value()), (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0);
+    LOG("PA = %f, WT = %f, sample = %f", PA.Value(), WT.Value(PA.Value()), (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0);
     return (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0;
 }
 
@@ -331,7 +358,7 @@ double Input::NextValue_(double)
 
 double Output::NextValue_(double i)
 {
-    printf("Ouptut: %f\n", 2.0 * i - 1.0);
+    LOG("in = %f", 2.0 * i - 1.0);
     switch(mixing_)
     {
     case Output::Cut: return 2.0 * i - 1.0;
@@ -350,13 +377,10 @@ double Output::NextValue_(double i)
 
 double WaveTable::Value(double idx)
 {
-    printf("WT: %f", idx);
     if(idx < 0.0) idx = 0.0;
     if(idx > 1.0 - 1.0e-15) idx = 1.0;
-    printf(" %f", idx);
 
     double normalized = idx * (table_.size() - 1); // don't loop around; enables sawtooth
-    printf(" %d %f\n", table_.size(), normalized);
 
     if(fabs(normalized - trunc(normalized)) < 1.0e-15) {
         int i = (int)normalized;
@@ -367,7 +391,6 @@ double WaveTable::Value(double idx)
     } else {
         int i1 = (int)floor(normalized);
         int i2 = (int)ceil(normalized);
-        printf("WT: %d %d %f\n", i1, i2, normalized - i1);
         return Interpolate(normalized - i1, i1, i2);
     }
 }
@@ -403,9 +426,9 @@ void PhaseAccumulator::Tick(double in)
 {
     double F = in;
     if(fabs(F) < 1.0e-15) return;
-    printf("))) %f %f", phi, F);
+    LOG("in = %f, phi = %f", F, phi);
     phi = fmod(phi + F, 44100.0);
-    printf(" %f\n", phi);
+    LOG("phi = %f", phi);
 }
 
 double PhaseAccumulator::Value()
