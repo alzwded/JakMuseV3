@@ -285,7 +285,7 @@ double Generator::NextValue_(double in)
         F = newF;
     }
     PA.Tick(F);
-    printf(">>> %f %f\n", PA.Value(), (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0);
+    printf(">>> %f %f -> %f\n", PA.Value(), WT.Value(PA.Value()), (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0);
     return (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0;
 }
 
@@ -358,16 +358,17 @@ double WaveTable::Value(double idx)
     double normalized = idx * (table_.size() - 1); // don't loop around; enables sawtooth
     printf(" %d %f\n", table_.size(), normalized);
 
-    if(normalized - trunc(normalized) < 1.0e-15) {
+    if(fabs(normalized - trunc(normalized)) < 1.0e-15) {
         int i = (int)normalized;
         return table_[i];
-    } else if(ceil(normalized) - normalized < 1.0e-15) {
+    } else if(fabs(ceil(normalized) - normalized) < 1.0e-15) {
         int i = (int)ceil(normalized);
         return table_[i];
     } else {
         int i1 = (int)floor(normalized);
         int i2 = (int)ceil(normalized);
-        return Interpolate(idx - i1, i1, i2);
+        printf("WT: %d %d %f\n", i1, i2, normalized - i1);
+        return Interpolate(normalized - i1, i1, i2);
     }
 }
 
