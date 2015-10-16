@@ -26,6 +26,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "parser.h"
 #include "parser_types.h"
+#include "log.h"
 
 #include <string>
 #include <algorithm>
@@ -127,8 +128,6 @@ void AssignString(std::string const& s, char*& p)
     strcpy(p, s.c_str());
 }
 
-#define LOG(F, ...) fprintf(stderr, "Tokenizer: " F "\n", __VA_ARGS__)
-
 bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 {
     if(!fin.good()) return false;
@@ -141,10 +140,10 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
         if(wc == std::char_traits<char>::eof() || fin.eof()) break;
         c = wc & 0xFF;
 
-        LOG("Considering %c", c);
+        LOGF(LOG_PARSER, "Considering %c", c);
 
         if(c == '#') {
-            LOG("Skipping comment until EOL");
+            LOGF(LOG_PARSER, "Skipping comment until EOL");
             (void) fin.get();
             while(wc = fin.get(), wc != 10 && wc != 13 && wc != EOF)
                 ;
@@ -153,7 +152,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
         if(isspace(wc) || isblank(wc) || c == 10 || c == 13 || c == ',') {
             if(text.str().empty()) {
-                LOG("Skipping whitespace");
+                LOGF(LOG_PARSER, "Skipping whitespace");
                 (void) fin.get();
                 continue;
             }
@@ -162,7 +161,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
         if(c == '[') {
             if(text.str().empty()) {
-                LOG("LSQUARE");
+                LOGF(LOG_PARSER, "LSQUARE");
                 hTokenId = LSQUARE;
                 (void) fin.get();
                 return true;
@@ -171,7 +170,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             }
         } else if(c == ']') {
             if(text.str().empty()) {
-                LOG("RSQUARE");
+                LOGF(LOG_PARSER, "RSQUARE");
                 hTokenId = RSQUARE;
                 (void) fin.get();
                 return true;
@@ -180,7 +179,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             }
         } else if(c == '{') {
             if(text.str().empty()) {
-                LOG("LCURLY");
+                LOGF(LOG_PARSER, "LCURLY");
                 hTokenId = LCURLY;
                 (void) fin.get();
                 return true;
@@ -189,7 +188,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             }
         } else if(c == '}') {
             if(text.str().empty()) { // if you notice I overuse stringstream::str too much in a loop, shut up; stringstream doesn't have empty for some reason and I'm too lazy to refactor
-                LOG("RCURLY");
+                LOGF(LOG_PARSER, "RCURLY");
                 hTokenId = RCURLY;
                 (void) fin.get();
                 return true;
@@ -198,7 +197,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             }
         } else if(c == '=') {
             if(text.str().empty()) {
-                LOG("EQUALS");
+                LOGF(LOG_PARSER, "EQUALS");
                 hTokenId = EQUALS;
                 (void) fin.get();
                 return true;
@@ -209,51 +208,51 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
         (void) fin.get();
         text << c;
-        LOG("Eating character; now at %s", text.str().c_str());
+        LOGF(LOG_PARSER, "Eating character; now at %s", text.str().c_str());
     }
 
     if(text.str().empty()) return false;
     std::string stext = text.str();
 
     if(stext.compare("OUTPUT") == 0) {
-        LOG("OUTPUT");
+        LOGF(LOG_PARSER, "OUTPUT");
         hTokenId = OUTPUT;
         return true;
     }
 
     if(stext.compare("NOTES") == 0) {
-        LOG("NOTES");
+        LOGF(LOG_PARSER, "NOTES");
         hTokenId = NOTES;
         return true;
     }
 
     if(stext.compare("PCM") == 0) {
-        LOG("PCM");
+        LOGF(LOG_PARSER, "PCM");
         hTokenId = PCM;
         return true;
     }
 
     if(stext.compare("SECTION") == 0) {
-        LOG("SECTION");
+        LOGF(LOG_PARSER, "SECTION");
         hTokenId = SECTION;
         return true;
     }
 
     if(stext.compare("END") == 0) {
-        LOG("END");
+        LOGF(LOG_PARSER, "END");
         hTokenId = END;
         return true;
     }
 
     if(stext.compare("INSTANCES") == 0) {
-        LOG("INSTANCES");
+        LOGF(LOG_PARSER, "INSTANCES");
         hTokenId = INSTANCES;
         return true;
     }
 
     Note n;
     if(TryParseNote(stext.c_str(), &n)) {
-        LOG("NOTE");
+        LOGF(LOG_PARSER, "NOTE");
         AssignString(text.str(), sToken);
         hTokenId = NOTE;
         return true;
@@ -264,14 +263,14 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
                 })
             && ((stext[0] >= '0' && stext[0] <= '9') || stext[0] == '-')
     ) {
-        LOG("NUMBER");
+        LOGF(LOG_PARSER, "NUMBER");
         AssignString(text.str(), sToken);
         hTokenId = NUMBER;
         return true;
     }
 
     AssignString(text.str(), sToken);
-    LOG("STRING");
+    LOGF(LOG_PARSER, "STRING");
     hTokenId = STRING;
     return true;
 }

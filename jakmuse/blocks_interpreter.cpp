@@ -92,7 +92,6 @@ InstanceInterpreter<Generator>::AcceptParameter(
                     switch(v.type) {
                     case PpValue::PpNUMBER:
                         thing_->WT.table_.push_back(v.num);
-                        printf("WT parse: %d\n", v.num);
                         break;
                     default:
                         throw std::invalid_argument("WT: value: Expecing a LIST of NUMBERs");
@@ -213,7 +212,7 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
             {\
                 std::shared_ptr<Constant> c(new Constant);\
                 c->value_ = (double)value.num / SCALE;\
-                LOG("%s = %f", #PARAM, c->value_); \
+                LOGF(LOG_INTERPRETER, "%s = %f", #PARAM, c->value_); \
                 thing_->PARAM = std::dynamic_pointer_cast<ABlock>(c);\
                 c->Tick3(); /* force buffer transfer */\
                 return nullptr;\
@@ -223,7 +222,7 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
                 std::string name;\
                 name.assign(value.str);\
                 auto thing = thing_;\
-                LOG("%s = {%s}", #PARAM, value.str); \
+                LOGF(LOG_INTERPRETER, "%s = {%s}", #PARAM, value.str); \
                 return [thing, name](LookupMap_t const& map) {\
                     thing->PARAM = map.at(name);\
                 };\

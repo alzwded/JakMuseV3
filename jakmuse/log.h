@@ -33,21 +33,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define LOGW(X) #X
 #define LOGQ(X) LOGW(X)
 
+#if 1
 #define LOG(F, ...) do{\
-    fprintf(stderr, "%%%%%% " __FILE__ ":" __func__ ":" LOGQ(__LINE__) ":\n\t" F "\n", \
+    fprintf(stderr, __FILE__ ":" __func__ ":" LOGQ(__LINE__) ":    " F "\n", \
             __VA_ARGS__); \
 }while(0)
+#else
+#define LOG(F, ...) do{\
+    fprintf(stderr, __FILE__ ":" LOGQ(__LINE__) ": " F " (" __func__ ")" "\n", __VA_ARGS__); \
+}while(0)
+#endif
 
 #define LOGF(MASK, F, ...) do{\
     auto&& msk = (MASK); \
-    if(msk & LOG_flags == msk) LOG(F, __VA_ARGS__); \
+    if((msk & LOG_flags) == msk) LOG(F, __VA_ARGS__); \
 }while(0)
 
 #define LOGS(MASK) do{ LOG_flags = (MASK); }while(0)
 
+#define LOGE(FLAG) (LOG_flags & (FLAG) != 0)
+
 #define LOG_BLOCKS 0x1
 #define LOG_PARSER 0x2
 #define LOG_MAINLOOP 0x4
+#define LOG_INTERPRETER 0x8
 //... LOG_otherstuff
 
 extern unsigned LOG_flags;

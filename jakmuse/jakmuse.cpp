@@ -27,6 +27,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "blocks_interpreter.h"
 #include "notes_interpreter.h"
 #include "parser_types.h"
+#include "log.h"
+
 #include <cstdio>
 #include <ios>
 #include <iostream>
@@ -115,7 +117,9 @@ std::tuple<std::function<float(void)>, size_t> sketch(std::istream& fin)
     PpFile fileHead;
 
     pParser = ParseAlloc(malloc);
-    ParseTrace(stderr, "Parser:    ");
+    if(LOGE(LOG_PARSER)) {
+        ParseTrace(stderr, "parser.y: ");
+    }
     while(GetNextToken(fin, hTokenId, sToken)) {
         Parse(pParser, hTokenId, sToken, &fileHead);
     }
