@@ -308,7 +308,7 @@ double Generator::NextValue_(double in)
 {
     LOGF(LOG_BLOCKS, "in = %f", in);
     double newF = 22050.0 * in;
-    if(NGlide && F > 1.0e-7 && newF > 1.0e-7) {
+    if(NGlide && newF > 1.0e-7) {
         F = F + (newF - F) / NGlide;
         --NGlide;
     } else if(newF > 1.0e-7 || shutUp) {
