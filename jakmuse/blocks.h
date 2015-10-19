@@ -156,10 +156,10 @@ protected:
         double v = 0.0;
         v = std::accumulate(inputs_.begin(), inputs_.end(), v,
                 [](double v, std::shared_ptr<ABlock> const& b) -> double {
-                    LOG("add %f", b->Value());
+                    LOGF(LOG_BLOCKS, "add %f", b->Value());
                     return v + b->Value();
                 });
-        LOG("Grand total %f", v);
+        LOGF(LOG_BLOCKS, "Grand total %f", v);
         return v;
     }
 
