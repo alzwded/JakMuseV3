@@ -1,3 +1,17 @@
+; while updating this file, I've noticed a number of defects:
+; 1. RELEASE cannot effin work unless you beat around the bush
+;    there needs to be some other way to keep the generators limping along
+;    with the previously good frequency while R is happening
+; 2. Input's triggering RST is stupid, because while I/O happens synchronously
+;    on each clock cycle, RST magically signals a new note was triggered
+;    before the note actually gets there; RST should be kinda sort of implicit
+;    this means rework the Tick* family of functions as well as the I/O
+;    functions to pass the reset information along
+;    Anyway, bottom line is I gots to gets rids of keeping two Input's around just to support release;
+;    The question arises: is R? = max(inputs) or R? = min(inputs) or R? = max(certain inputs) or R? = only_one_certain_input
+; 3. time-related constants should be reworked into something predictable
+; 4. WT only accepts 0, 1 and -1; lol
+
 SECTION INSTANCES
     OUTPUT {
         IN = [ OFilter ],
@@ -12,35 +26,36 @@ SECTION INSTANCES
     }
 
     DelayI1 Delay {
-        IN = [ I1 ],
+        IN = [ I2 ],
         Amount = 0
     }
 
     OFilter Filter {
         IN = [ Melody ],
-        A = 500, D = 0, S = 999, R = 500, ResetADSR = 0, InvertADSR = 0,
+        A = 500, D = 0, S = 999, R = 400, ResetADSR = 0, InvertADSR = 0,
         Mixing = Cut,
         Low = 22050, High = 0, K = 500
     }
 
     I1 Input {
-        RST = [OFilter, Melody]
+        RST = [OFilter]
+    }
+
+    I2 Input {
+        RST = [Melody]
     }
 
     VibrI1 Filter {
         IN = [ A20HzSine ],
-        ;K = ScaleVibrI1,
         K = ScaleVibrI1
-        ;K = 5 # well... right now 0 is off center; need to renormalize values.........
         Mixing = Cut,
         Low = 22050, High = 0,
         A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
     }
 
     ScaleVibrI1 Filter {
-        ;IN = 55,
-        IN = 45
-        K = I1,
+        IN = I2
+        K = 45
         Mixing = Cut,
         Low = 22050, High = 0,
         A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
@@ -58,5 +73,9 @@ SECTION NOTES
     I1 NOTES {
         Divisor = 2,
         Notes = [ 1A4 1B4 1C#5 1E5 2A5 1- 2A4 1- ]
+    }
+    I2 NOTES {
+        Divisor = 2,
+        Notes = [ 1A4 1B4 1C#5 1E5 2A5 1A5 2A4 1A4 ]
     }
 END SECTION

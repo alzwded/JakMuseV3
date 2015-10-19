@@ -73,7 +73,7 @@ void Filter::ResetTick(ResetKind kind)
                 {
                     LOGF(LOG_BLOCKS, "RELEASE -> ATTACK");
                     state = ATTACK;
-                    double r0 = 1.0 - ((double)ADSR_counter / DecayValue());
+                    double r0 = 1.0 - ((double)ADSR_counter / ReleaseValue());
                     double r2 = ReleaseValue();
                     r0 = r0 * r2;
                     ADSR_counter = (int)(r0 * AttackValue());
