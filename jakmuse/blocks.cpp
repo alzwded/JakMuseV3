@@ -305,10 +305,10 @@ double Generator::NextValue_(double in)
 {
     LOGF(LOG_BLOCKS, "in = %f", in);
     double newF = 22050.0 * fabs(in);
-    if(NGlide && fabs(F) > 1.0e-15) {
+    if(NGlide && fabs(F) > 1.0e-7 && fabs(newF) > 1.0e-7) {
         F = F + (newF - F) / NGlide;
         --NGlide;
-    } else if(fabs(newF) > 1.0e-15 || shutUp) {
+    } else if(fabs(newF) > 1.0e-7 || shutUp) {
         F = newF;
     }
     PA.Tick(F);
