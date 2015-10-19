@@ -1008,3 +1008,35 @@ struct WaveTable
         return interpolate(numThunks * in, floor(numThunks * in), ceil(numThunks * in));
     }
 };
+
+==============================================================
+How to handle Release
+==============================================================
+
+ABlock:
+    new Output parameter: bool Reset
+
+Input gets a new parameter:
+    OnRest : { RetainValue, Zero }
+        RetainValue: on rest, Reset == true, Value == previousNonRestValue
+        Zero: on rest, Reset == true, Value = 0.0
+    loses RST parameter
+
+Generator gets a new parameter:
+    GlideOnRest : bool
+        T -> glide works even when ResetFrom->Reset() is REST; always triggered
+        F -> glide is disabled if ResetFrom->Reset() is REST; only triggers on NOTE to NOTE resets
+
+The following blocks get a new parameter: ResetFrom: ABlock*
+    Filter
+    Generator
+    Delay
+    Noise
+
+As Londoners would put it: SORTED!
+
+to get silence: Filter moves to REST state after ResetFrom->Reset()==true and RELEASE ticks pass => outputs 0.0
+generator: if ResetFrom->Reset() == rest, then NGlide = 0, keep reading frequency
+    if input is OnRest==RetainValue, then the frequency will be kept
+    if ResetFrom->Reset() == note, and coming out of rest, then don't glide; or glide? this could be a parameter
+
