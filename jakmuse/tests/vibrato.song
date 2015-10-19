@@ -18,7 +18,7 @@ SECTION INSTANCES
 
     OFilter Filter {
         IN = [ Melody ],
-        A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
+        A = 500, D = 0, S = 999, R = 500, ResetADSR = 0, InvertADSR = 0,
         Mixing = Cut,
         Low = 22050, High = 0, K = 500
     }
@@ -57,6 +57,6 @@ END SECTION
 SECTION NOTES
     I1 NOTES {
         Divisor = 2,
-        Notes = [ 1A4 1B4 1C#5 1E5 2A5 1- 2A4 ]
+        Notes = [ 1A4 1B4 1C#5 1E5 2A5 1- 2A4 1- ]
     }
 END SECTION

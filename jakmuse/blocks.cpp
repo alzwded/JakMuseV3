@@ -207,15 +207,16 @@ double Filter::ApplyEnvelope(double x)
                 double r1 = 1 - r2;
                 r0 = r0 * r1 + r2;
                 LOGF(LOG_BLOCKS, "DECAY a %f x %f", r0, x);
+                ADSR_counter++;
                 return (r0 * x);
             } else {
                 double r0 = ((double)ADSR_counter / DecayValue());
                 double r2 = SustainValue();
                 r0 = r0 * r2;
                 LOGF(LOG_BLOCKS, "DECAY a %f x %f", r0, x);
+                ADSR_counter++;
                 return (r0 * x);
             }
-            ADSR_counter++;
         } else {
             LOGF(LOG_BLOCKS, "DECAY -> SUSTAIN");
             ADSR_counter = 0;
@@ -232,6 +233,7 @@ double Filter::ApplyEnvelope(double x)
                 double r2 = SustainValue();
                 r0 = r0 * r2;
                 LOGF(LOG_BLOCKS, "RELEASE a %f x %f", r0, x);
+                ADSR_counter++;
                 return r0 * x;
             } else {
                 double r0 = ((double)ADSR_counter / ReleaseValue());
@@ -239,6 +241,7 @@ double Filter::ApplyEnvelope(double x)
                 double r1 = 1.0 - r2;
                 r0 = r0 * r1 + r2;
                 LOGF(LOG_BLOCKS, "RELEASE a %f x %f", r0, x);
+                ADSR_counter++;
                 return r0 * x;
             }
         } else {
@@ -296,7 +299,7 @@ void Generator::ResetTick(ResetKind kind)
         break;
     case ResetKind::REST:
         NGlide = 0;
-        shutUp = true;
+        //shutUp = true; // FIXME release ain't working 'cause the Input controlling the amplitude of the vibrato gets disabled
         break;
     }
 }
@@ -304,11 +307,11 @@ void Generator::ResetTick(ResetKind kind)
 double Generator::NextValue_(double in)
 {
     LOGF(LOG_BLOCKS, "in = %f", in);
-    double newF = 22050.0 * fabs(in);
-    if(NGlide && fabs(F) > 1.0e-7 && fabs(newF) > 1.0e-7) {
+    double newF = 22050.0 * in;
+    if(NGlide && F > 1.0e-7 && newF > 1.0e-7) {
         F = F + (newF - F) / NGlide;
         --NGlide;
-    } else if(fabs(newF) > 1.0e-7 || shutUp) {
+    } else if(newF > 1.0e-7 || shutUp) {
         F = newF;
     }
     PA.Tick(F);

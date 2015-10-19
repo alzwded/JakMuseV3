@@ -214,7 +214,7 @@ private:
         SUSTAIN,
         RELEASE,
         REST
-    } state = SUSTAIN;
+    } state = ATTACK;
     int ADSR_counter = 0;
     double loY = 0.0;
     double hiX = 0.0;
