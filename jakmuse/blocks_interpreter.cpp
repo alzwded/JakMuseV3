@@ -189,7 +189,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
             {
                 thing_->Inputs().clear();
                 std::shared_ptr<Constant> k(new Constant);
-                k->value_ = (double)value.num / 22050; // FIXME
+                k->value_ = (double)value.num / 22050.0; // FIXME
                 k->Tick3();
                 thing_->Inputs().push_back(std::dynamic_pointer_cast<ABlock>(k));
                 return nullptr;
@@ -400,8 +400,49 @@ InstanceInterpreter<Delay>::AcceptParameter(std::string paramName, PpValue value
         default:
             throw std::invalid_argument("Delay: Amount: expecting a NUMBER");
         }
+    } else if(paramName.compare("IN") == 0) {
+        switch(value.type) {
+        case PpValue::PpLIST:
+            {
+                thing_->Inputs().clear();
+                std::deque<DelayedLookup_fn> fns;
+                for(PpValueList* p = value.list; p; p = p->next) {
+                    PpValue v = p->value;
+                    switch(v.type) {
+                    case PpValue::PpSTRING:
+                        {
+                            std::string name;
+                            name.assign(v.str);
+                            thing_sp thing = thing_;
+                            fns.push_back([thing, name](LookupMap_t const& map) {
+                                        thing->Inputs().push_back(map.at(name));
+                                    });
+                        }
+                        break;
+                    default:
+                        throw std::invalid_argument("value: expected STRING or LIST of STRINGs or NUMBER");
+                    }
+                }
+                return [fns](LookupMap_t const& map) {
+                    for(auto&& fn : fns) fn(map);
+                };
+            }
+            break;
+        case PpValue::PpSTRING:
+            {
+                thing_->Inputs().clear();
+                std::string name;
+                name.assign(value.str);
+                std::shared_ptr<thing_t> thing = thing_;
+                return [thing, name](LookupMap_t const& map) {
+                    thing->Inputs().push_back(map.at(name));
+                };
+            }
+        default:
+            throw std::invalid_argument("IN: value: expecting LIST of STRINGs or STRING");
+        }
     } else {
-        throw std::invalid_argument("Delay: unknown param; expecting Amount");
+        throw std::invalid_argument("Delay: unknown param; expecting IN, Amount");
     }
 }
 

@@ -210,6 +210,7 @@ std::tuple<std::function<float(void)>, size_t> sketch(std::istream& fin)
     }
     auto&& out = *found;
 
+#if 0
     auto cycle = [out, blocks]() mutable -> float {
         for(auto&& b : blocks) b->Tick1();
         for(auto&& b : blocks) b->Tick2();
@@ -217,6 +218,29 @@ std::tuple<std::function<float(void)>, size_t> sketch(std::istream& fin)
         double dvalue = out->Value(); // -1..1
         return dvalue;
     };
+#else
+    auto cycle = [out, map]() mutable -> float {
+        LOG("BEGIN CYCLE");
+        for(auto&& kv : map.data_)
+        {
+            LOG("block %s.Tick1()", kv->Name().c_str());
+            kv->Block()->Tick1();
+        }
+        for(auto&& kv : map.data_)
+        {
+            LOG("block %s.Tick2()", kv->Name().c_str());
+            kv->Block()->Tick2();
+        }
+        for(auto&& kv : map.data_)
+        {
+            LOG("block %s.Tick3()", kv->Name().c_str());
+            kv->Block()->Tick3();
+        }
+        double dvalue = out->Value(); // -1..1
+        LOG("END CYCLE");
+        return dvalue;
+    };
+#endif
 
     return std::make_tuple(cycle, maxDuration);
 

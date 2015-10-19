@@ -1,0 +1,60 @@
+SECTION INSTANCES
+    OUTPUT {
+        IN = [ OFilter ],
+        Mixing = Flatten
+    }
+
+    Melody Generator {
+        IN = [ DelayI1, VibrI1 ],
+        WT = [ 0, 1, 0, -1, 0 ],
+        Interpolation = Cosine,
+        Glide = 0
+    }
+
+    DelayI1 Delay {
+        IN = [ I1 ],
+        Amount = 0
+    }
+
+    OFilter Filter {
+        IN = [ Melody ],
+        A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
+        Mixing = Cut,
+        Low = 22050, High = 0, K = 500
+    }
+
+    I1 Input {
+        RST = [OFilter]
+    }
+
+    VibrI1 Filter {
+        IN = [ A20HzSine ],
+        #K = ScaleVibrI1,
+        K = 0 # well... right now 0 is off center; need to renormalize values.........
+        Mixing = Cut,
+        Low = 22050, High = 0,
+        A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
+    }
+
+    ScaleVibrI1 Filter {
+        IN = 55,
+        K = I1,
+        Mixing = Cut,
+        Low = 22050, High = 0,
+        A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
+    }
+
+    A20HzSine Generator {
+        IN = 1
+        WT = [ 0, 1, 0, -1, 0 ],
+        Interpolation = Cosine,
+        Glide = 0
+    }
+END SECTION
+
+SECTION NOTES
+    I1 NOTES {
+        Divisor = 1,
+        Notes = [ 2A4 ]
+    }
+END SECTION

@@ -38,6 +38,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <deque>
 #include <list>
 
+#include "log.h"
+
 struct WaveTable
 {
     std::vector<double> table_;
@@ -154,8 +156,10 @@ protected:
         double v = 0.0;
         v = std::accumulate(inputs_.begin(), inputs_.end(), v,
                 [](double v, std::shared_ptr<ABlock> const& b) -> double {
+                    LOG("add %f", b->Value());
                     return v + b->Value();
                 });
+        LOG("Grand total %f", v);
         return v;
     }
 
