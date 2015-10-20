@@ -161,24 +161,46 @@ int Filter::ReleaseValue()
 double Filter::ApplyLowPassFilter(double in)
 {
     assert(Lo);
-    double rc = 1.0 / 2.0 * M_PI * Lo->Value();
-    double a = 1.0 / (rc + 1.0);
-    double y = loY + a  * (in - loY);
-    LOGF(LOG_BLOCKS, "in %f a %f y %f filtered %f", in, a, loY, y);
-    loY = y;
-    return y;
+    if(Lo->Value() > 1.0e-7) {
+        double rc = 1.0 / (2.0 * M_PI * Lo->Value());
+        double a = 1.0 / (rc + 1.0);
+        double y = a * in + (1 - a) * loY;
+        LOGF(LOG_BLOCKS, "in %f a %f y %f filtered %f", in, a, loY, y);
+        loY = y;
+        return y;
+    } else {
+        double y = loY;
+        LOGF(LOG_BLOCKS, "low pass filter went overboard");
+        return y;
+    }
 }
 
 double Filter::ApplyHighPassFilter(double in)
 {
     assert(Hi);
-    double rc = 1.0 / 2.0 * M_PI * Hi->Value();
-    double a = 1.0 / (rc + 1.0);
-    double y = a * (hiY + in - hiX);
-    LOGF(LOG_BLOCKS, "in %f a %f y %f x %f filtered %f", in, a, hiY, hiX, y);
-    hiY = y;
-    hiX = in;
-    return y;
+    if(Hi->Value() > 1.0e-7) {
+        double rc = 1.0 / (2.0 * M_PI * Hi->Value());
+        double a = rc / (rc + 1.0);
+        double y = a * hiY + a * (in - hiX);
+        LOGF(LOG_BLOCKS, "in %f a %f y %f x %f filtered %f", in, a, hiY, hiX, y);
+        hiY = y;
+        hiX = in;
+        return y;
+    } else {
+#if 1
+        hiY = in;
+        hiX = in;
+        return in;
+#else
+        double rc = 1.0 / (2.0 * M_PI * 1.0e-7);
+        double a = rc / (rc + 1.0);
+        LOGF(LOG_BLOCKS, "high filter went overboard");
+        double y = a * hiY + a * (in - hiX);
+        hiY = y;
+        hiX = in;
+        return y;
+#endif
+    }
 }
 
 double Filter::ApplyEnvelope(double x)
@@ -465,7 +487,7 @@ const unsigned Noise::polys[2] = { 0x8255, 0xA801 };
 void Noise::ResetTick(ResetKind kind)
 {
     if(kind == ResetKind::REST) goal = -1;
-    else goal = (int)(999.0 * ((ivalue_ + 1.0) / 2.0));
+    else goal = (int)(999.0 * ivalue_);
 
     ++counter;
     if(counter >= goal) {

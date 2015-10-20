@@ -127,7 +127,7 @@ void PCMInterpreter::Fill(LookupMap_t const& map)
         switch(interpolation) {
         case TRUNC:
             {
-                auto chunk = std::make_tuple(total, (n.value / 999.0) * 2.0 - 1.0, kind);
+                auto chunk = std::make_tuple(total, ((double)n.value / 999.0), kind);
                 buffer << chunk;
             }
             break;

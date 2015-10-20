@@ -1,0 +1,80 @@
+SECTION INSTANCES
+    OUTPUT {
+        IN = [ F1, F2, F3 ]
+    }
+
+    F1 Filter {
+        IN = [ N1 ],
+        RST = N1
+        A = 50, D = 0, S = 999, R = 40, ResetADSR = 0, InvertADSR = 0,
+        Mixing = Cut,
+        Low = 22050,
+        High = 0,
+        K = 500
+    }
+
+    N1 Noise {
+        Type = 1, ; try changing this to 0
+        IN = I1
+        RST = I1
+    }
+
+    I1 Input {
+    }
+
+    F2 Filter {
+        IN = [ N2 ],
+        RST = N2
+        A = 50, D = 0, S = 999, R = 40, ResetADSR = 0, InvertADSR = 0,
+        Mixing = Cut,
+        Low = 200,
+        High = 0,
+        K = 500
+    }
+
+    N2 Noise {
+        Type = 1, ; try changing this to 0
+        IN = I2
+        RST = I2
+    }
+
+    I2 Input {
+    }
+
+    F3 Filter {
+        IN = [ N3 ],
+        RST = N3
+        A = 50, D = 0, S = 999, R = 40, ResetADSR = 0, InvertADSR = 0,
+        Mixing = Cut,
+        Low = 22050,
+        High = 8000,
+        K = 500
+    }
+
+    N3 Noise {
+        Type = 1, ; try changing this to 0
+        IN = I3
+        RST = I3
+    }
+
+    I3 Input {
+    }
+END SECTION
+
+SECTION NOTES
+    I1 PCM {Stride=3, Interpolation=Trunc, Samples = [
+        1 0, 1 2, 1 4, 1 8,
+        1 -1, 1 -1, 1 -1, 1 -1,
+        1 -1, 1 -1, 1 -1, 1 -1,
+    ]}
+    I2 PCM {Stride=3, Interpolation=Trunc, Samples = [
+        1 -1, 1 -1, 1 -1, 1 -1,
+        1 0, 1 2, 1 4, 1 8,
+        1 -1, 1 -1, 1 -1, 1 -1,
+    ]}
+    I3 PCM {Stride=3, Interpolation=Trunc, Samples = [
+        1 -1, 1 -1, 1 -1, 1 -1,
+        1 -1, 1 -1, 1 -1, 1 -1,
+        1 0, 1 2, 1 4, 1 8,
+    ]}
+END SECTION
