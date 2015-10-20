@@ -81,7 +81,7 @@ const float OFFSET_Y = 0.f;
 
 static Document doc;
 static enum { GFX, TXT } mode_ = GFX;
-static enum { EDITING, SAVING, OPENING } inputMode_ = EDITING;
+static enum { EDITING, SAVING, OPENING, GOTO } inputMode_ = EDITING;
 static std::string currentText;
 static bool modified = false;
 
@@ -321,6 +321,14 @@ static void handleSpecialRelease(int key, int x, int y)
         modified = true;
         glutPostRedisplay();
         break;
+    case GLUT_KEY_F6:
+        {
+            currentText = "";
+            modified = true;
+            inputMode_ = GOTO;
+            glutPostRedisplay();
+        }
+        break;
     case GLUT_KEY_F10:
         doc.PopState();
         glutPostRedisplay();
@@ -360,6 +368,12 @@ static void handleKeyRelease(unsigned char key, int x, int y)
     case 13:
         // TODO save undo point
         switch(inputMode_) {
+        case GOTO:
+            doc.scroll_ = atoi(currentText.c_str());
+            doc.Scroll(doc.scroll_);
+            doc.ScrollLeftRight(0);
+            TextStart();
+            break;
         case EDITING:
             doc.PushState();
             TextValidate();
