@@ -38,6 +38,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <deque>
 #include <list>
 
+#ifdef _MSC_VER
+typedef __int64 int64_t;
+#else
+# include <cstdint>
+#endif
+
 #include "log.h"
 
 struct WaveTable
@@ -212,9 +218,9 @@ private:
     double ApplyLowPassFilter(double in);
     double ApplyHighPassFilter(double in);
     double ApplyEnvelope(double in);
-    int AttackValue();
-    int DecayValue();
-    int ReleaseValue();
+    int64_t AttackValue();
+    int64_t DecayValue();
+    int64_t ReleaseValue();
     double SustainValue();
 
 private:
@@ -225,7 +231,7 @@ private:
         RELEASE,
         REST
     } state = ATTACK;
-    int ADSR_counter = 0;
+    int64_t ADSR_counter = 0;
     double loY = 0.0;
     double hiX = 0.0;
     double hiY = 0.0;
@@ -245,7 +251,7 @@ protected:
 
 private:
     double F = 0.0;
-    int NGlide = 0;
+    int64_t NGlide = 0;
     PhaseAccumulator PA;
     bool shutUp = true;
 };
@@ -253,7 +259,7 @@ private:
 struct Input
 : public ABlock
 {
-    typedef std::tuple<int, double, ResetKind> value_type;
+    typedef std::tuple<int64_t, double, ResetKind> value_type;
 
     // TODO interpolation? That is in the staff right now...
     //      maybe it's actually better if interpolated PCM data
@@ -271,8 +277,8 @@ protected:
     double NextValue_(double) override;
 
 private:
-    int step = 0;
-    int objective = 0;
+    int64_t step = 0;
+    int64_t objective = 0;
     double value = 0.0;
 };
 
@@ -301,7 +307,7 @@ protected:
     double NextValue_(double x) override;
 
 private:
-    int counter = 0, goal = 0;
+    int64_t counter = 0, goal = 0;
     std::vector<unsigned> regs = std::vector<unsigned>{ 0xA001, 0xA001 }; // vs2013 RTM generates C2797 for some reason, so explicitly call list initializer; updates don't; yeah, it's one of those things
     static const unsigned polys[2];
 };

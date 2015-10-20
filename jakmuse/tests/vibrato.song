@@ -9,7 +9,7 @@ SECTION INSTANCES
         RST = DelayI1
         WT = [ 0, 999, 0, -999, 0 ],
         Interpolation = Cosine,
-        Glide = 8
+        Glide = 370
         GlideOnRest = 0 ; try changing this to 1
     }
 
@@ -60,4 +60,4 @@ SECTION NOTES
         Divisor = 2,
         Notes = [ 1A4 1B4 1C#5 1E5 2A5 1- 2A4 1- ]
     }
-1ND SECTION
+END SECTION

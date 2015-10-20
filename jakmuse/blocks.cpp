@@ -30,6 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cmath>
 #include <assert.h>
 
+#define CLAMP(f) ((f < -1.0) ? -1.0 : ((f > 1.0) ? 1.0 : f))
+
 // ===========================================================
 // Filter
 // ===========================================================
@@ -63,7 +65,7 @@ void Filter::ResetTick(ResetKind kind)
                     double r2 = SustainValue();
                     double r1 = 1.0 - r2;
                     r0 = (r0 * r1) + r2;
-                    ADSR_counter = (int)(r0 * AttackValue());
+                    ADSR_counter = (int64_t)(r0 * AttackValue());
                 }
                 break;
             case SUSTAIN:
@@ -74,9 +76,10 @@ void Filter::ResetTick(ResetKind kind)
                     LOGF(LOG_BLOCKS, "RELEASE -> ATTACK");
                     state = ATTACK;
                     double r0 = 1.0 - ((double)ADSR_counter / ReleaseValue());
-                    double r2 = ReleaseValue();
+                    double r2 = SustainValue();
                     r0 = r0 * r2;
-                    ADSR_counter = (int)(r0 * AttackValue());
+                    //printf("hit %I64d %f %f %I64d %I64d\n", ADSR_counter, r0, SustainValue(), AttackValue(), ReleaseValue());
+                    ADSR_counter = (int64_t)(r0 * AttackValue());
                 }
                 break;
             }
@@ -92,7 +95,7 @@ void Filter::ResetTick(ResetKind kind)
                 if(r0 < r1) {
                     LOGF(LOG_BLOCKS, "ATTACK -> RELEASE");
                     state = RELEASE;
-                    ADSR_counter = (int)(r0 * ReleaseValue());
+                    ADSR_counter = (int64_t)(r0 * ReleaseValue());
                 } else {
                     LOGF(LOG_BLOCKS, "ATTACK -> reset RELEASE");
                     // TODO lean release
@@ -115,7 +118,7 @@ void Filter::ResetTick(ResetKind kind)
                 } else {
                     LOGF(LOG_BLOCKS, "DECAY -> RELEASE");
                     state = RELEASE;
-                    ADSR_counter = (int)((1.0 - r0) * ReleaseValue());
+                    ADSR_counter = (int64_t)((1.0 - r0) * ReleaseValue());
                 }
             }
             break;
@@ -133,16 +136,16 @@ void Filter::ResetTick(ResetKind kind)
     }
 }
 
-int Filter::AttackValue()
+int64_t Filter::AttackValue()
 {
     assert(A);
-    return (int)(44100.0 / 100.0 * 999.0 * A->Value());
+    return (int64_t)(44100.0 / 100.0 * 999.0 * A->Value());
 }
 
-int Filter::DecayValue()
+int64_t Filter::DecayValue()
 {
     assert(D);
-    return (int)(44100.0 / 100.0 * 999.0 * D->Value());
+    return (int64_t)(44100.0 / 100.0 * 999.0 * D->Value());
 }
 
 double Filter::SustainValue()
@@ -152,10 +155,10 @@ double Filter::SustainValue()
     return S->Value();
 }
 
-int Filter::ReleaseValue()
+int64_t Filter::ReleaseValue()
 {
     assert(R);
-    return (int)(44100.0 / 100.0 * 999.0 * R->Value());
+    return (int64_t)(44100.0 / 100.0 * 999.0 * R->Value());
 }
 
 double Filter::ApplyLowPassFilter(double in)
@@ -293,9 +296,7 @@ double Filter::NextValue_(double in)
     LOGF(LOG_BLOCKS, "in %f norm %f lo %f hi %f enve %f gain %f", in, normalized, r0, r1, r2, r3);
     switch(mixing_) {
     case Cut:
-        if(r3 > 1.0) return 1.0;
-        if(r3 < -1.0) return -1.0;
-        return r3;
+        return CLAMP(r3);
     case Flatten:
         return tanh(r3);
     default:
@@ -312,24 +313,23 @@ double Filter::NextValue_(double in)
 
 void Generator::ResetTick(ResetKind kind)
 {
+    assert(TGlide);
+    auto glideValue = (int64_t)(TGlide->Value() * 999.0 * 44100.0 / 10000.0); 
     switch(kind)
     {
     case ResetKind::NOTE:
-        assert(TGlide);
         if(!GlideOnRest && !shutUp) {
-            NGlide = (int)(TGlide->Value() * 999.0 * 44100.0 / 100.0);
-            shutUp = false;
+            NGlide = glideValue;
         } else if(!GlideOnRest && shutUp) {
             NGlide = 0;
-            shutUp = false;
         } else if(GlideOnRest) {
-            NGlide = (int)(TGlide->Value() * 999.0 * 44100.0 / 100.0);
-            shutUp = false;
+            NGlide = glideValue;
         }
+        shutUp = false;
         break;
     case ResetKind::REST:
         if(GlideOnRest) {
-            NGlide = (int)(TGlide->Value() * 999.0 * 44100.0 / 100.0);
+            NGlide = glideValue;
             shutUp = false;
         } else {
             NGlide = 0;
@@ -403,7 +403,7 @@ double Output::NextValue_(double i)
     LOGF(LOG_BLOCKS, "in = %f", i);
     switch(mixing_)
     {
-    case Output::Cut: return i;
+    case Output::Cut: return CLAMP(i);
     case Output::Flatten: return tanh(i);
     default:
 #define INVALID_MIXING_TYPE false
@@ -487,7 +487,7 @@ const unsigned Noise::polys[2] = { 0x8255, 0xA801 };
 void Noise::ResetTick(ResetKind kind)
 {
     if(kind == ResetKind::REST) goal = -1;
-    else goal = (int)(999.0 * ivalue_);
+    else goal = (int64_t)(999.0 * ivalue_);
 
     ++counter;
     if(counter >= goal) {

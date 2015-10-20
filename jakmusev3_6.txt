@@ -556,19 +556,19 @@ token delimiters:
     WHITESPACE, COMMA, '{', '}', '[', ']', '='
 
 --------------------------------------------------------------
-Paramters
+Parameters
 --------------------------------------------------------------
     name        default     notes
 
 :Filter:
-    A           0           attack time; can be Input#PCM (0 = 0; 255 = 2550)
-    D           0           decay time; can be Input#PCM (0 = 0; 255 = 2550)
-    S           0.5         sustain level; can be Input#PCM (0 = 0; 255 = 1)
-    R           0           release time; can be Input#PCM (0 = 0;255 = 2550)
+    A           0           attack time; can be Input#PCM (0..999 in 10*ms)
+    D           0           decay time; can be Input#PCM (idem A)
+    S           0.5         sustain level; can be Input#PCM (0 = 0; 999 = 1)
+    R           0           release time; can be Input#PCM (idem A)
     ResetADSR   1           resets counter on note change if in S
-    Low         22050       low pass filter cut off frequency; can be Input#PCM (0 = 1; 255 = 22050)
-    High        1           high pass filter cut off frequency; can be Input#PCM (0 = 1; 255 = 22050)
-    K           0.5         gain factor; can be Input#PCM (0 = 0; 255 = 1)
+    Low         22050       low pass filter cut off frequency; can be Input#PCM (0..22050 for input file, or 0..999 proportional over 0..22050 for PCM (where 999 is 22050))
+    High        1           high pass filter cut off frequency; can be Input#PCM (idem Low)
+    K           0.5         gain factor; can be Input#PCM (0 = 0; 999 = 1)
     InvertADSR  0           invert envelope (A->D, D->A, R->A2)
     Mixing      Cut         mixing type for inputs;
                                 Cut = I1 + I2...
@@ -578,11 +578,21 @@ Paramters
 
 :Generator:
     WT          [0]         looping wave table
-    Glide       0           number of time steps blend frequencies; can be Input#PCM (0 = 0; 255 = 2550)
+    Glide       0           number of time steps blend frequencies; can be Input#PCM (0..999 in 100us)
+    GlideOnRest 0 or 1      Whether or not to glide to 0 into/from a rest
+    Interpolation   Trunc, Linear, Cosine
+                            Interpolation method for wavetable
     [INPUT]     F=1         signal frequency set to F Hz
     [RESET]     -
 
 :Input:
+    OnRest      RetainValue or Zero
+                            Behaviour on encountering rest; either retain the previous non-rest value or zero out
+
+:Delay:
+    Amount      Number of samples to delay the input; the actual amount is (Amount+1) (!)
+    [INPUT]     -
+    [RESET]     -
 
 :Input#NOTES:
     Scale       1           divide 44100/Scale and 1 time sample
@@ -608,6 +618,11 @@ Paramters
     Type        0           0 or 1 (polynomial coefficients to use for the noise generator)
     [INPUT]     K=1         delay factor (keep a sample for K time steps)
     [RESET]     -
+
+:OUTPUT:
+    Mixing      Cut or Flatten
+                            whether to cut values or to flatten them out with tanh
+    [INPUT]
 
 
 ==============================================================
