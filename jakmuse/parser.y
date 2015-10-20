@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     #include "parser_types.h"
 
     extern bool TryParseNote(const char*, Note*);
+    extern int tokenizer_lineno;
 }
 
 %extra_argument { PpFile* FileHead }
@@ -42,6 +43,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     fprintf(stderr, "Syntax error somewhere\n");
     FileHead->instances = NULL;
     FileHead->staves = NULL;
+}
+%syntax_error {
+    fprintf(stderr, "Syntax error somewhere, last line read: %d\n", tokenizer_lineno);
+    exit(2);
 }
 
 %token_type { char* }

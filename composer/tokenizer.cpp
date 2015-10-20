@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <istream>
 #include <sstream>
 
+int tokenizer_lineno = 1;
+
 bool TryParseNote(const char* s, Note* n)
 {
     std::string text;
@@ -117,11 +119,15 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             (void) fin.get();
             while(wc = fin.get(), wc != 10 && wc != 13 && wc != EOF)
                 ;
+            tokenizer_lineno++;
             continue;
         }
 
         if(isspace(c) || isblank(c) || c == 10 || c == 13 || c == ',') {
             if(text.str().empty()) {
+                if(c == 10) {
+                    tokenizer_lineno++;
+                }
                 LOG("Skipping whitespace");
                 (void) fin.get();
                 continue;

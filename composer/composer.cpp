@@ -365,7 +365,12 @@ static void handleKeyRelease(unsigned char key, int x, int y)
                 doc.PushState();
                 std::fstream f(currentText, std::ios::in);
                 if(f.good()) {
-                    doc.Open(f);
+                    try {
+                        doc.Open(f);
+                    } catch(std::exception e) {
+                        fprintf(stderr, "Failed to open %s: %s\n", currentText.c_str(), e.what());
+                        break;
+                    }
                     doc.title_ = currentText;
                 }
                 inputMode_ = EDITING;
@@ -828,6 +833,23 @@ int main(int argc, char* argv[])
     doc.UpdateCache();
     doc.InitCells();
     if(doc.Active()) currentText = doc.Active()->Text();
+
+    if(argc > 1) {
+        std::fstream f(argv[1]);
+        if(f.good()) {
+            try {
+                doc.Open(f);
+            } catch(std::exception e) {
+                fprintf(stderr, "Failed to open %s: %s\n", argv[1], e.what());
+                exit(2);
+            }
+            doc.title_.assign(argv[1]);
+            TextStart();
+        } else {
+            fprintf(stderr, "Failed to open %s\n", argv[1]);
+            exit(2);
+        }
+    }
 
     // set up ortho 2d
     glMatrixMode(GL_PROJECTION);

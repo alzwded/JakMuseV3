@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <istream>
 #include <sstream>
 
+int tokenizer_lineno = 1;
+
 static signed TranslateNote(char name)
 {
     switch(name) {
@@ -147,6 +149,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             (void) fin.get();
             while(wc = fin.get(), wc != 10 && wc != 13 && wc != EOF)
                 ;
+            tokenizer_lineno++;
             continue;
         }
 
@@ -154,6 +157,9 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
             if(text.str().empty()) {
                 LOGF(LOG_PARSER, "Skipping whitespace");
                 (void) fin.get();
+                if(c == 10) {
+                    tokenizer_lineno++;
+                }
                 continue;
             }
             break;
