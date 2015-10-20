@@ -1,26 +1,26 @@
 SECTION INSTANCES
     OUTPUT {
         IN = [ Fltr ],
-        Mixing = Flatte
+        Mixing = Flatten
     }
 
     A440 Generator {
         IN = [ I1 ],
-        WT = [ 0, 1, 0, -1, 0 ],
-        #WT = [ 1, -1, 1 ],
+        WT = [ 0, 999, 0, -999, 0 ],
+        ;WT = [ 999, -999, 999 ], ; this works as well
         Interpolation = Cosine,
         Glide = 0
     }
 
     Fltr Filter {
         IN = [ A440 ],
+        RST = I1
         A = 0, D = 0, S = 999, R = 0, ResetADSR = 0, InvertADSR = 0,
         Mixing = Cut,
         Low = 22050, High = 0, K = 500
     }
 
     I1 Input {
-        RST = [Fltr]
     }
 END SECTION
 
