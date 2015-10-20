@@ -21,7 +21,7 @@ SECTION INSTANCES
     Melody Generator {
         IN = [ DelayI1, VibrI1 ],
         RST = DelayI1
-        WT = [ 0, 1, 0, -1, 0 ],
+        WT = [ 0, 999, 0, -999, 0 ],
         Interpolation = Cosine,
         Glide = 4000
         GlideOnRest = 0 ; try changing this to 1
@@ -63,7 +63,7 @@ SECTION INSTANCES
 
     A20HzSine Generator {
         IN = 5
-        WT = [ 0, 1, 0, -1, 0 ],
+        WT = [ 0, 999, 0, -999, 0 ],
         Interpolation = Cosine,
         Glide = 0
     }

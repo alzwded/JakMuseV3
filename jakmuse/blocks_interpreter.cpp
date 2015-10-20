@@ -91,7 +91,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
                     PpValue v = p->value;
                     switch(v.type) {
                     case PpValue::PpNUMBER:
-                        thing_->WT.table_.push_back(v.num);
+                        thing_->WT.table_.push_back((double)v.num / 999.0);
                         break;
                     default:
                         throw std::invalid_argument("WT: value: Expecing a LIST of NUMBERs");
