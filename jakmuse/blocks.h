@@ -304,7 +304,7 @@ struct Noise
 : public ABlock
 {
     void ResetTick(ResetKind) override;
-    enum { EIGHT, SIXTEEN } type_;
+    enum { EIGHT, SIXTEEN } type_ = SIXTEEN;
 
 protected:
     double NextValue_(double x) override;
