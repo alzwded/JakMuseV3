@@ -301,6 +301,7 @@ int main(int argc, char* argv[])
 #define QUOTE_HELPER(X) #X
 #define QUOTE(X) QUOTE_HELPER(X)
     printf("jakmuse v3.%s\n", QUOTE(VERSION));
+    printf("Copyright (C) 2015 Vlad Mesco\n");
     processArgs(argc, argv);
     try {
         std::istream* fin = nullptr;

@@ -15,7 +15,37 @@ Oh, and I'm actually writing a GUI for V3's note input. [V2's](http://github.com
 What's done
 ===========
 
-Nothing yet. Please stand by.
+Synth
+-----
+
+* you have the following blocks to play around with:
+  + Generator – generates a periodic signal based on a wave table; supports Glide
+  + Filter – a god block which does the following:
+    - gain (<1.0 only)
+    - ADSR envelope
+    - low & high pass filtering
+    - smooth mixing of input samples
+  + Delay – helps keep nets in synch
+  + Input – reads note notation data or raw PCM, to be used as inputs to everything else
+  + Noise – generate some noise; supports a 16bit and an 8bit generator; can hold a sample for multiple ticks to generate brown-ish/pink-ish noise (I think? anyway, noise with less high frequencies)
+* you can connect the blocks via the IN and RST parameters
+* you can input notes via a common variation of letter notation
+* you can input raw PCM data
+* you can generate a .wav file with your work of art
+
+GUI
+---
+
+* you can edit the NOTES section of a jakmuse input file (but not directly; you will need to do a `cat instances notes end_section > jakmuseinput` since the composer can only edit the notes part
+* idem PCM data
+* you can save and load files (yay!)
+
+Documentation
+-------------
+
+The closest thing I have to documentation is [the original scratch spec](https://github.com/alzwded/JakMuseV3/blob/master/jakmusev3_6.txt) and [the interpreter source code](https://github.com/alzwded/JakMuseV3/blob/master/jakmuse/blocks_interpreter.cpp).
+
+This will need to change and have formal documentation. This is not yet done.
 
 Roadmap
 =======
@@ -24,12 +54,12 @@ Roadmap
 - composer (ready)
   + GUI (ready)
   + back-end (ready)
-- instrument & score parser (i.e. the I or I/O) (in progress)
-- synthesizer
-  + blocks... (in progress)
-  + mixer... (in progress)
-  + connections... (in progress)
-  + clock...
-- documentation (convert specs to docs)
+- instrument & score parser (i.e. the I or I/O) (done)
+- synthesizer (done, off-line only)
+  + blocks... (done)
+  + mixer... (done, part of block)
+  + connections... (done, part of block)
+  + clock... (done, off-line only)
+- documentation (convert specs to docs) TODO
 - modify "static" parameters to also be connectable to input sources (filter frequencies, gain, ADSR); or just do this from the get-go (handled)
-- linux support (i.e. Makefile + ifdef away windows specific stuff)
+- linux support (i.e. Makefile + ifdef away windows specific stuff) TODO

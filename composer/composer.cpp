@@ -24,6 +24,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef VERSION
+# define VERSION 0
+#endif
+
 #include <GL/freeglut.h>
 #include <cstdio>
 
@@ -808,6 +812,9 @@ static void draw()
 int main(int argc, char* argv[])
 {
     SetProcessDPIAware();
+
+    printf("jakmuse v3.%s composer\n", QUOTE(VERSION));
+    printf("Copyright (C) 2015 Vlad Mesco\n");
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA);
