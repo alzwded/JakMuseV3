@@ -136,13 +136,13 @@ void Filter::ResetTick(ResetKind kind)
 int Filter::AttackValue()
 {
     assert(A);
-    return (int)(44100.0 * 2.5 * A->Value());
+    return (int)(44100.0 / 100.0 * 999.0 * A->Value());
 }
 
 int Filter::DecayValue()
 {
     assert(D);
-    return (int)(44100.0 * 2.5 * D->Value());
+    return (int)(44100.0 / 100.0 * 999.0 * D->Value());
 }
 
 double Filter::SustainValue()
@@ -155,7 +155,7 @@ double Filter::SustainValue()
 int Filter::ReleaseValue()
 {
     assert(R);
-    return (int)(44100.0 * 2.5 * R->Value());
+    return (int)(44100.0 / 100.0 * 999.0 * R->Value());
 }
 
 double Filter::ApplyLowPassFilter(double in)
@@ -317,19 +317,19 @@ void Generator::ResetTick(ResetKind kind)
     case ResetKind::NOTE:
         assert(TGlide);
         if(!GlideOnRest && !shutUp) {
-            NGlide = (int)(TGlide->Value() * 2550.0);
+            NGlide = (int)(TGlide->Value() * 999.0 * 44100.0 / 100.0);
             shutUp = false;
         } else if(!GlideOnRest && shutUp) {
             NGlide = 0;
             shutUp = false;
         } else if(GlideOnRest) {
-            NGlide = (int)(TGlide->Value() * 2550.0);
+            NGlide = (int)(TGlide->Value() * 999.0 * 44100.0 / 100.0);
             shutUp = false;
         }
         break;
     case ResetKind::REST:
         if(GlideOnRest) {
-            NGlide = (int)(TGlide->Value() * 2550.0);
+            NGlide = (int)(TGlide->Value() * 999.0 * 44100.0 / 100.0);
             shutUp = false;
         } else {
             NGlide = 0;

@@ -165,7 +165,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
         case PpValue::PpNUMBER:
             {
                 std::shared_ptr<Constant> k(new Constant);
-                k->value_ = (double)value.num / 2550; // FIXME
+                k->value_ = (double)value.num / 999; // FIXME
                 thing_->TGlide = std::dynamic_pointer_cast<ABlock>(k);
                 k->Tick3();
                 return nullptr;
@@ -258,13 +258,13 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
         }\
 }while(0)
     if(paramName.compare("A") == 0) {
-        NUMBER_OR_INPUT(A, 2550.0);
+        NUMBER_OR_INPUT(A, 999.0);
     } else if(paramName.compare("D") == 0) {
-        NUMBER_OR_INPUT(D, 2550.0);
+        NUMBER_OR_INPUT(D, 999.0);
     } else if(paramName.compare("S") == 0) {
         NUMBER_OR_INPUT(S, 999.0);
     } else if(paramName.compare("R") == 0) {
-        NUMBER_OR_INPUT(R, 2550.0);
+        NUMBER_OR_INPUT(R, 999.0);
     } else if(paramName.compare("ResetADSR") == 0) {
         switch(value.type) {
         case PpValue::PpNUMBER:
@@ -413,7 +413,7 @@ InstanceInterpreter<Delay>::AcceptParameter(std::string paramName, PpValue value
     if(paramName.compare("Amount") == 0) {
         switch(value.type) {
         case PpValue::PpNUMBER:
-            if(value.num > 2550) throw std::invalid_argument("Delay: Amount: should be between 0 and 2550");
+            if(value.num > 999 || value.num < 0) throw std::invalid_argument("Delay: Amount: should be between 0 and 999");
             thing_->delay_ = value.num;
             return nullptr;
         default:

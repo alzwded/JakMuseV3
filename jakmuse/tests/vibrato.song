@@ -9,7 +9,7 @@ SECTION INSTANCES
         RST = DelayI1
         WT = [ 0, 999, 0, -999, 0 ],
         Interpolation = Cosine,
-        Glide = 4000
+        Glide = 8
         GlideOnRest = 0 ; try changing this to 1
     }
 
@@ -22,7 +22,7 @@ SECTION INSTANCES
     OFilter Filter {
         IN = [ Melody ],
         RST = Melody
-        A = 500, D = 0, S = 999, R = 400, ResetADSR = 0, InvertADSR = 0,
+        A = 50, D = 0, S = 999, R = 40, ResetADSR = 0, InvertADSR = 0,
         Mixing = Cut,
         Low = 22050, High = 0, K = 500
     }
@@ -60,4 +60,4 @@ SECTION NOTES
         Divisor = 2,
         Notes = [ 1A4 1B4 1C#5 1E5 2A5 1- 2A4 1- ]
     }
-END SECTION
+1ND SECTION
