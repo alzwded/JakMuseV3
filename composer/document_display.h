@@ -288,7 +288,7 @@ public:
     }
     point_t Right() 
     {
-        if(Location().x >= 146) return Location();
+        if(Location().x >= COLUMNS * 2 - 1) return Location();
         NoteCell* note = dynamic_cast<NoteCell*>(doc_.Cell(point_t(
                     Location().x + 1,
                     Location().y)));
