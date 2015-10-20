@@ -164,6 +164,7 @@ void NoteCell::UserInput(std::string text)
         if(s1.empty() || s2.empty()) return;
 
         int scale = atoi(s1.c_str());
+        if(scale <= 0) return;
         int goodNum = atoi(s2.c_str());
         if(abs(goodNum) > 999) return;
 

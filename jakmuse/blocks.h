@@ -117,8 +117,10 @@ struct TypeStream
     inline operator bool() { return !fail(); }
     inline void clear() { failed_ = false; }
 
-private:
+public: // eff u ur public nao
     std::deque<value_type> values_;
+
+private:
     bool failed_ = false;
 };
 

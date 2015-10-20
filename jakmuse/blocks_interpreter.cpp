@@ -413,7 +413,8 @@ InstanceInterpreter<Delay>::AcceptParameter(std::string paramName, PpValue value
     if(paramName.compare("Amount") == 0) {
         switch(value.type) {
         case PpValue::PpNUMBER:
-            if(value.num > 999 || value.num < 0) throw std::invalid_argument("Delay: Amount: should be between 0 and 999");
+            if(//value.num > 999 ||
+                    value.num < 0) throw std::invalid_argument("Delay: Amount: should be between 0 and 999");
             thing_->delay_ = value.num;
             return nullptr;
         default:

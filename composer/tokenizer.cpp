@@ -62,11 +62,11 @@ bool TryParseNote(const char* s, Note* n)
     text = text.substr(number.size());
     // expecting a note name
     if(text.empty()) return false;
-    static const char noteNames[] = "ABCDEFGH-";
+    static const char noteNames[] = "ABCDEFGHabcdefgh-";
     if(!strchr(noteNames, text[0])) {
         return false;
     }
-    char noteName = text[0];
+    char noteName = toupper(text[0]);
     text = text.substr(1);
     // expecting an optional sharp
     if(text.empty() && noteName != '-') return false;
@@ -84,6 +84,8 @@ bool TryParseNote(const char* s, Note* n)
         }
     }
 
+    if(atoi(number.c_str()) <= 0) return false;
+
     n->scale_ = atoi(number.c_str());
     n->name_ = noteName;
     n->sharp_ = sharp;
@@ -98,7 +100,11 @@ void AssignString(std::string const& s, char*& p)
     strcpy(p, s.c_str());
 }
 
+#if 0
 #define LOG(F, ...) fprintf(stderr, "Tokenizer: " F "\n", __VA_ARGS__)
+#else
+#define LOG(F, ...)
+#endif
 
 bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 {

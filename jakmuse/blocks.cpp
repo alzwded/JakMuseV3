@@ -316,7 +316,7 @@ double Filter::NextValue_(double in)
 void Generator::ResetTick(ResetKind kind)
 {
     assert(TGlide);
-    auto glideValue = (int64_t)(TGlide->Value() * 999.0 * 44100.0 / 10000.0); 
+    auto glideValue = (int64_t)(TGlide->Value() * 999.0 * 44100.0 / 10000.0 * 2.5);  // 250us
     switch(kind)
     {
     case ResetKind::NOTE:

@@ -177,7 +177,7 @@ void Document::Open(std::istream& fin)
     PpStaffList* fileHead;
 
     pParser = ParseAlloc( malloc );
-    ParseTrace(stderr, "Parser:   ");
+    //ParseTrace(stderr, "Parser:   ");
     while( GetNextToken(fin, hTokenId, sToken) ) {
         Parse(pParser, hTokenId, sToken, &fileHead);
     }

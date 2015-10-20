@@ -2,7 +2,11 @@ VERSION = 0
 CC = cl.exe
 GLUTROOT = ..\freeglut
 LEMONROOT = ..\vendor\lemon
-CFLAGS = /Ot /c /EHsc /I. /Zi /arch:SSE2 /DVERSION=$(VERSION)
+!IF DEFINED(JAKMUSE_OPTS) && "$(JAKMUSE_OPTS)" == "debug"
+CFLAGS = /Od /c /EHa /I. /Zi /arch:SSE2 /DVERSION=$(VERSION)
+!ELSE
+CFLAGS = /Ox /c /EHa /I. /arch:SSE2 /DVERSION=$(VERSION)
+!ENDIF
 #CFLAGS = /c /EHsc /I. /Zi /arch:SSE2 /DVERSION=$(VERSION) /RTC1 /analyze  /Ge /GS /Gs
 LD = link.exe
 LDOPTS = /OUT:jakmuse.exe /DEBUG /PDB:jakmuse.pdb

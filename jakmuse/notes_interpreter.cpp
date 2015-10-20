@@ -31,14 +31,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cmath>
 #include <type_traits>
 #include <exception>
+#include <map>
+
+std::map<std::string, std::shared_ptr<ANotesInterpreter>> cache_;
 
 std::shared_ptr<ANotesInterpreter>
 GetNotesInterpreter(std::string instanceType, std::string name)
 {
+    auto&& found = cache_.find(name);
+    if(found != cache_.end()) {
+        return found->second;
+    }
     if(instanceType.compare("NOTES") == 0) {
-        return std::make_shared<NotesInterpreter>(name);
+        auto it = std::make_shared<NotesInterpreter>(name);
+        cache_.insert(std::make_pair(name, it));
+        return it;
     } else if(instanceType.compare("PCM") == 0) {
-        return std::make_shared<PCMInterpreter>(name);
+        auto it = std::make_shared<PCMInterpreter>(name);
+        cache_.insert(std::make_pair(name, it));
+        return it;
     } else {
         throw std::invalid_argument(std::string() + "Unknown notation: " + instanceType);
     }
@@ -80,6 +91,7 @@ void NotesInterpreter::Fill(LookupMap_t const& map)
         throw std::invalid_argument(std::string("NotesInterpreter: ") + name_ + " is not supported. " + e.what());
     }
     decltype(found->InputBuffer()) buffer = *pBuffer;
+    buffer.values_.clear(); // TODO effin compute the duration of a song better // FIXME // XXX ugly
 
     double mult = 44100.0 / divisor;
     for(auto&& it = notes.begin(); it != notes.end(); ++it) {
@@ -95,6 +107,7 @@ void NotesInterpreter::Fill(LookupMap_t const& map)
         if(n.value < 1.0e-15) kind = ResetKind::REST;
         auto chunk = std::make_tuple(newDuration, n.value, kind);
         buffer << chunk;
+        static int CNT = 0;
     }
 }
 
@@ -112,6 +125,7 @@ void PCMInterpreter::Fill(LookupMap_t const& map)
         throw std::invalid_argument(std::string("PCMInterpreter: ") + name_ + " is not supported. " + e.what());
     }
     auto&& buffer = *pBuffer;
+    buffer.values_.clear(); // TODO effin compute the duration of a song better // FIXME // XXX ugly
 
     double mult = 44100.0 / stride; // FIXME not really as intended, but it really helps sync the two; eff semantics!
     for(auto&& it = notes.begin(); it != notes.end(); ++it) {
