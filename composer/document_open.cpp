@@ -226,8 +226,8 @@ void Document::Open(std::istream& fin)
             continue;
         }
         Staff& staff = (found != staves_.end()) ? *found : staves_[++staffIdx];
-        printf("idx: %d\n", staffIdx);
-        printf("  %s\n", name.c_str());
+        //printf("idx: %d\n", staffIdx);
+        //printf("  %s\n", name.c_str());
 
         staff.name_ = name;
         staff.type_ = ppstaff.type;

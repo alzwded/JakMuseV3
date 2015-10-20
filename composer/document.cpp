@@ -372,14 +372,14 @@ void Document::Paste()
         {
             if(marked_.x < 0 || marked_.y < 0) return;
             point_t pos = marked_;
-            printf("%d %d %d %d\n", marked_.x, marked_.y, selected_.y, selected_.y);
+            //printf("%d %d %d %d\n", marked_.x, marked_.y, selected_.y, selected_.y);
             if(selected_.x >= 0 && selected_.y >= 0) {
                 pos.x = std::min(selected_.x, pos.x);
                 pos.y = std::min(selected_.y, pos.y);
             }
             BufferOp op = PreCutSelection();
             op.cut();
-            printf("%d %d ==\n", pos.x, pos.y);
+            //printf("%d %d ==\n", pos.x, pos.y);
             marked_ = pos;
             selected_ = pos;
             insertMode_ = InsertMode_t::INSERT;
@@ -399,7 +399,7 @@ void Document::Paste()
 
 void Document::SetActiveToMarked()
 {
-    if(marked_.x < 0 || marked_.y < 0) { printf("no marked\n"); return; }
+    if(marked_.x < 0 || marked_.y < 0) { /*printf("no marked\n");*/ return; }
     Staff& s = staves_[marked_.y];
     int pos = 0;
     pos = std::accumulate(s.notes_.begin(), s.notes_.begin() + marked_.x, pos,
@@ -413,7 +413,7 @@ void Document::SetActiveToMarked()
         ScrollLeftRight(0);
     }
     UpdateCache();
-    printf("P %d\n", pos);
+    //printf("P %d\n", pos);
 
     auto&& cache = cache_;
     int staffIdx = marked_.y;
@@ -435,7 +435,7 @@ void Document::SetActiveToMarked()
     if(!nc) return;
 
     while(!nc->First()) {
-        printf("moving left\n");
+        //printf("moving left\n");
         nc = dynamic_cast<NoteCell*>(Cell(nc->Location().x - 1, nc->Location().y));
     }
 
@@ -461,7 +461,7 @@ void Document::NewNote()
                 it = s.notes_.begin();
                 pos = point_t(0, staffIdx);
             }
-            printf("%d %d\n", marked_.x, it - s.notes_.begin());
+            //printf("%d %d\n", marked_.x, it - s.notes_.begin());
             if(s.type_ == 'P') n = p;
             s.notes_.insert(it, n);
             ClearSelection();
