@@ -165,8 +165,9 @@ double Filter::ApplyLowPassFilter(double in)
 {
     assert(Lo);
     if(Lo->Value() > 1.0e-7) {
-        double rc = 1.0 / (2.0 * M_PI * Lo->Value());
-        double a = 1.0 / (rc + 1.0);
+        double rc = 1.0 / (2.0 * M_PI * Lo->Value() * 22050);
+        static const double dt = 1.0 / 22050.0;
+        double a = dt / (rc + dt);
         double y = a * in + (1 - a) * loY;
         LOGF(LOG_BLOCKS, "in %f a %f y %f filtered %f", in, a, loY, y);
         loY = y;
@@ -182,8 +183,9 @@ double Filter::ApplyHighPassFilter(double in)
 {
     assert(Hi);
     if(Hi->Value() > 1.0e-7) {
-        double rc = 1.0 / (2.0 * M_PI * Hi->Value());
-        double a = rc / (rc + 1.0);
+        static const double dt = 1.0 / 22050.0;
+        double rc = 1.0 / (2.0 * M_PI * Hi->Value() * 22050.0);
+        double a = rc / (rc + dt);
         double y = a * hiY + a * (in - hiX);
         LOGF(LOG_BLOCKS, "in %f a %f y %f x %f filtered %f", in, a, hiY, hiX, y);
         hiY = y;
@@ -386,6 +388,7 @@ void Input::Tick2()
         reset_ = std::make_tuple(true, kind);
     } else {
         ++step;
+        reset_ = std::make_tuple(false, std::get<1>(reset_));
     }
 }
 
@@ -488,6 +491,11 @@ void Noise::ResetTick(ResetKind kind)
 {
     if(kind == ResetKind::REST) goal = -1;
     else goal = (int64_t)(999.0 * ivalue_);
+}
+
+double Noise::NextValue_(double)
+{
+    if(goal < 0) return 0.0;
 
     ++counter;
     if(counter >= goal) {
@@ -503,11 +511,6 @@ void Noise::ResetTick(ResetKind kind)
         }
         counter = 0;
     }
-}
-
-double Noise::NextValue_(double)
-{
-    if(goal < 0) return 0.0;
 
     switch(type_) {
     case EIGHT: return ((double)regs[0] / 0xFFFF - 0.5) * 2.0;

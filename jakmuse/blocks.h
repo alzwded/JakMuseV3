@@ -187,9 +187,12 @@ public:
 struct Constant
 : public ABlock
 {
-    double value_ = 0.0;
+    double value_;
 
     void ResetTick(ResetKind) override {}
+
+    Constant() : value_(0.0) { ivalue_ = ovalue_ = value_; }
+    Constant(double value) : value_(value) { ivalue_ = ovalue_ = value_; }
 
 protected:
     double NextValue_(double) override { return value_; }
@@ -198,15 +201,15 @@ protected:
 struct Filter
 : public ABlock
 {
-    std::shared_ptr<ABlock> K;
-    std::shared_ptr<ABlock> A;
-    std::shared_ptr<ABlock> D;
-    std::shared_ptr<ABlock> S;
-    std::shared_ptr<ABlock> R;
+    std::shared_ptr<ABlock> K = std::shared_ptr<ABlock>(new Constant(1.0));
+    std::shared_ptr<ABlock> A = std::shared_ptr<ABlock>(new Constant);
+    std::shared_ptr<ABlock> D = std::shared_ptr<ABlock>(new Constant);
+    std::shared_ptr<ABlock> S = std::shared_ptr<ABlock>(new Constant(1.0));
+    std::shared_ptr<ABlock> R = std::shared_ptr<ABlock>(new Constant);
     bool ResetADSR = true;
     bool InvertADSR = false;
-    std::shared_ptr<ABlock> Hi;
-    std::shared_ptr<ABlock> Lo;
+    std::shared_ptr<ABlock> Hi = std::shared_ptr<ABlock>(new Constant);
+    std::shared_ptr<ABlock> Lo = std::shared_ptr<ABlock>(new Constant(1.0));
     enum { Cut, Flatten } mixing_ = Cut;
 
     void ResetTick(ResetKind) override;
@@ -241,7 +244,7 @@ struct Generator
 : public ABlock
 {
     WaveTable WT;
-    std::shared_ptr<ABlock> TGlide;
+    std::shared_ptr<ABlock> TGlide = std::shared_ptr<ABlock>(new Constant);
     bool GlideOnRest = false;
 
     void ResetTick(ResetKind) override;

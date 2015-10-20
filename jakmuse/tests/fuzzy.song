@@ -1,0 +1,82 @@
+SECTION INSTANCES
+    OUTPUT {
+        IN = [ FMaster ]
+        Mixing = Flatten
+    }
+
+    FMaster Filter {
+        IN = [FSecond]
+        RST = FSecond
+        Mixing = Flatten
+        A = 1, D = 80, S = 120, R = 0, ResetADSR = 1
+        K = 700
+    }
+
+    FSecond Filter {
+        IN = [GBase, GMid, GLow]
+        ;IN = [GBase] ; contrast with using just GBase
+        RST = GBase
+        Mixing = Cut
+        K = 990
+        A = 0, D = 0, S = 999, R = 0
+    }
+
+    GBase Generator {
+        IN = [ DI1 ]
+        RST = DI1
+        Glide = 0
+        WT = [ 0 250 500 750 999 750 500 250 0 -500 -999 -500 0 ]
+        Interpolation = Cosine
+    }
+
+    GMid Generator {
+        IN = [ FHalf ]
+        RST = FHalf
+        Glide = 0
+        WT = [ 0 250 500 750 999 750 500 250 0 -500 -999 -500 0 ]
+        Interpolation = Linear
+    }
+
+    GLow Generator {
+        IN = [ FThird ]
+        RST = FThird
+        Glide = 0
+        WT = [ 0 250 500 750 999 750 500 250 0 -500 -999 -500 0 ]
+        Interpolation = Cosine
+    }
+
+    FHalf Filter {
+        IN = [ I1 ],
+        RST = I1
+        K = 500
+        Mixing = Cut,
+        A = 0, D = 0, S = 999, R = 0
+    }
+
+    FThird Filter {
+        IN = [ I1 ],
+        RST = I1
+        K = 333
+        Mixing = Cut,
+        A = 0, D = 0, S = 999, R = 0
+    }
+
+    DI1 Delay {
+        IN = [ I1 ]
+        RST = I1
+    }
+
+    I1 Input {
+        OnRest = RetainValue
+    }
+END SECTION
+
+SECTION NOTES
+    I1 NOTES {
+        Divisor = 4
+        Notes = [
+            2A3 2G3 1E3 1A3 2C4 6D4 1-
+            2A4 2G4 1E4 1A4 2C5 6D5 1-
+        ]
+    }
+END SECTION
