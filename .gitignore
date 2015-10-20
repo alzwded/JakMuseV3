@@ -38,3 +38,8 @@ parser.cpp
 parser.h
 log
 *.log
+
+*.wav
+*.tmp
+temp
+*.ini
