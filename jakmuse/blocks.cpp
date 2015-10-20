@@ -166,7 +166,7 @@ double Filter::ApplyLowPassFilter(double in)
     assert(Lo);
     if(Lo->Value() > 1.0e-7) {
         double rc = 1.0 / (2.0 * M_PI * Lo->Value() * 22050);
-        static const double dt = 1.0 / 22050.0; // TODO I made this 22k because I thought I saw higher a values; this should be 44k; investigate and make a decision
+        static const double dt = 1.0 / 44100.0; // TODO I made this 22k because I thought I saw higher a values; this should be 44k; investigate and make a decision
         double a = dt / (rc + dt);
         double y = a * in + (1 - a) * loY;
         LOGF(LOG_BLOCKS, "in %f a %f y %f filtered %f", in, a, loY, y);
@@ -183,7 +183,7 @@ double Filter::ApplyHighPassFilter(double in)
 {
     assert(Hi);
     if(Hi->Value() > 1.0e-7) {
-        static const double dt = 1.0 / 22050.0;
+        static const double dt = 1.0 / 44100.0;
         double rc = 1.0 / (2.0 * M_PI * Hi->Value() * 22050.0);
         double a = rc / (rc + dt);
         double y = a * hiY + a * (in - hiX);

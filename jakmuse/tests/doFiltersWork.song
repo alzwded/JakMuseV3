@@ -1,0 +1,53 @@
+SECTION INSTANCES
+    OUTPUT { IN=[F6] }
+    F6 Filter {
+        IN = [F5]
+        K = 999
+        Low = 440
+        High = 440
+    }
+    F5 Filter {
+        IN = [F4]
+        K = 999
+        Low = 440
+        High = 440
+    }
+    F4 Filter {
+        IN = [F3]
+        K = 999
+        Low = 440
+        High = 440
+    }
+    F3 Filter {
+        IN = [F2]
+        K = 999
+        Low = 440
+        High = 440
+    }
+    F2 Filter {
+        IN = [F1]
+        K = 999
+        Low = 440
+        High = 440
+    }
+    F1 Filter {
+        IN = [G2]
+        K = 999
+        Low = 440
+        High = 440
+    }
+    G1 Noise {
+        IN = I1
+        Type = 1
+    }
+    I1 Input {}
+    I2 Input {}
+    G2 Generator {
+        IN = I2
+        WT = [999, -999, 999]
+    }
+END SECTION
+SECTION NOTES
+    I1 PCM { Stride=1, Interpolation=Trunc, Samples=[2 0] }
+    I2 NOTES { Divisor=1, Notes=[2A4] }
+END SECTION
