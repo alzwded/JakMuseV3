@@ -142,7 +142,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
         LOGF(LOG_PARSER, "Considering %c", c);
 
-        if(c == '#') {
+        if(c == ';') {
             LOGF(LOG_PARSER, "Skipping comment until EOL");
             (void) fin.get();
             while(wc = fin.get(), wc != 10 && wc != 13 && wc != EOF)

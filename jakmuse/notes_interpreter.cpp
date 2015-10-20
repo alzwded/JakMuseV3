@@ -87,12 +87,12 @@ void NotesInterpreter::Fill(LookupMap_t const& map)
         int newDuration = (int)(mult * n.duration);
         if(newDuration <= 0) {
             std::stringstream ss;
-            ss << "PCMInterpreter: " << name_ << "; ";
+            ss << "NotesInterpreter: " << name_ << "; ";
             ss << (it - notes.begin()) << "th note results in invalid duration";
             throw std::invalid_argument(ss.str());
         }
         ResetKind kind = ResetKind::NOTE;
-        if(n.value == 0.0) kind = ResetKind::REST;
+        if(n.value < 1.0e-15) kind = ResetKind::REST;
         auto chunk = std::make_tuple(newDuration, n.value, kind);
         buffer << chunk;
     }
@@ -127,7 +127,7 @@ void PCMInterpreter::Fill(LookupMap_t const& map)
         switch(interpolation) {
         case TRUNC:
             {
-                auto chunk = std::make_tuple(total, n.value, kind);
+                auto chunk = std::make_tuple(total, (n.value / 999.0) * 2.0 - 1.0, kind);
                 buffer << chunk;
             }
             break;
@@ -137,8 +137,8 @@ void PCMInterpreter::Fill(LookupMap_t const& map)
                 ++it2;
                 if(it2 == notes.end()) continue;
                 auto&& n2 = *it2;
-                double v1 = n.value / 999.0;
-                double v2 = n2.value / 999.0;
+                double v1 = n.value / 999.0 * 2.0 - 1.0;
+                double v2 = n2.value / 999.0 * 2.0 - 1.0;
                 for(int i = 0; i < total; ++i) {
                     double pc = (double)i/total;
                     double samp = v1 * (1 - pc) + v2 * pc;
@@ -152,8 +152,8 @@ void PCMInterpreter::Fill(LookupMap_t const& map)
                 ++it2;
                 if(it2 == notes.end()) continue;
                 auto&& n2 = *it2;
-                double v1 = n.value / 999.0;
-                double v2 = n2.value / 999.0;
+                double v1 = n.value / 999.0 * 2.0 - 1.0;
+                double v2 = n2.value / 999.0 * 2.0 - 1.0;
                 for(int i = 0; i < total; ++i) {
                     double pc = (double)i/total;
                     double qht = (1.0 - cos(M_PI * pc)) / 2.0;

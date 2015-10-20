@@ -73,7 +73,7 @@ void Filter::ResetTick(ResetKind kind)
                 {
                     LOGF(LOG_BLOCKS, "RELEASE -> ATTACK");
                     state = ATTACK;
-                    double r0 = 1.0 - ((double)ADSR_counter / DecayValue());
+                    double r0 = 1.0 - ((double)ADSR_counter / ReleaseValue());
                     double r2 = ReleaseValue();
                     r0 = r0 * r2;
                     ADSR_counter = (int)(r0 * AttackValue());
@@ -207,15 +207,16 @@ double Filter::ApplyEnvelope(double x)
                 double r1 = 1 - r2;
                 r0 = r0 * r1 + r2;
                 LOGF(LOG_BLOCKS, "DECAY a %f x %f", r0, x);
+                ADSR_counter++;
                 return (r0 * x);
             } else {
                 double r0 = ((double)ADSR_counter / DecayValue());
                 double r2 = SustainValue();
                 r0 = r0 * r2;
                 LOGF(LOG_BLOCKS, "DECAY a %f x %f", r0, x);
+                ADSR_counter++;
                 return (r0 * x);
             }
-            ADSR_counter++;
         } else {
             LOGF(LOG_BLOCKS, "DECAY -> SUSTAIN");
             ADSR_counter = 0;
@@ -232,6 +233,7 @@ double Filter::ApplyEnvelope(double x)
                 double r2 = SustainValue();
                 r0 = r0 * r2;
                 LOGF(LOG_BLOCKS, "RELEASE a %f x %f", r0, x);
+                ADSR_counter++;
                 return r0 * x;
             } else {
                 double r0 = ((double)ADSR_counter / ReleaseValue());
@@ -239,6 +241,7 @@ double Filter::ApplyEnvelope(double x)
                 double r1 = 1.0 - r2;
                 r0 = r0 * r1 + r2;
                 LOGF(LOG_BLOCKS, "RELEASE a %f x %f", r0, x);
+                ADSR_counter++;
                 return r0 * x;
             }
         } else {
@@ -259,7 +262,7 @@ double Filter::ApplyEnvelope(double x)
 
 double Filter::NextValue_(double in)
 {
-    double normalized = 2.0 * in - 1.0;
+    double normalized = in;
     double r0 = ApplyLowPassFilter(normalized);
     double r1 = ApplyHighPassFilter(r0);
     double r2 = ApplyEnvelope(r1);
@@ -269,14 +272,14 @@ double Filter::NextValue_(double in)
     switch(mixing_) {
     case Cut:
         if(r3 > 1.0) return 1.0;
-        if(r3 < -1.0) return 0.0;
-        return (r3 + 1.0) / 2.0;
+        if(r3 < -1.0) return -1.0;
+        return r3;
     case Flatten:
-        return (tanh(r3) + 1.0) / 2.0;
+        return tanh(r3);
     default:
 #define UNKNOWN_MIXING_TYPE false
         assert(UNKNOWN_MIXING_TYPE);
-        return 0.5;
+        return 0.0;
 #undef UNKNOWN_MIXING_TYPE
     }
 }
@@ -291,12 +294,12 @@ void Generator::ResetTick(ResetKind kind)
     {
     case ResetKind::NOTE:
         assert(TGlide);
-        NGlide = TGlide->Value();
+        NGlide = (int)(TGlide->Value() * 2550.0);
         shutUp = false;
         break;
     case ResetKind::REST:
         NGlide = 0;
-        shutUp = true;
+        //shutUp = true; // FIXME release ain't working 'cause the Input controlling the amplitude of the vibrato gets disabled
         break;
     }
 }
@@ -305,15 +308,15 @@ double Generator::NextValue_(double in)
 {
     LOGF(LOG_BLOCKS, "in = %f", in);
     double newF = 22050.0 * in;
-    if(NGlide) {
+    if(NGlide && newF > 1.0e-7) {
         F = F + (newF - F) / NGlide;
         --NGlide;
-    } else if(fabs(newF) > 1.0e-15 || shutUp) {
+    } else if(newF > 1.0e-7 || shutUp) {
         F = newF;
     }
     PA.Tick(F);
-    LOGF(LOG_BLOCKS, "PA = %f, WT = %f, sample = %f", PA.Value(), WT.Value(PA.Value()), (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0);
-    return (WT.Value(PA.Value() / 44100.0) + 1.0) / 2.0;
+    LOGF(LOG_BLOCKS, "PA = %f, WT = %f, sample = %f", PA.Value(), WT.Value(PA.Value()), (WT.Value(PA.Value() / 44100.0)));
+    return (WT.Value(PA.Value() / 44100.0));
 }
 
 // ===========================================================
@@ -358,15 +361,15 @@ double Input::NextValue_(double)
 
 double Output::NextValue_(double i)
 {
-    LOGF(LOG_BLOCKS, "in = %f", 2.0 * i - 1.0);
+    LOGF(LOG_BLOCKS, "in = %f", i);
     switch(mixing_)
     {
-    case Output::Cut: return 2.0 * i - 1.0;
-    case Output::Flatten: return tanh(2.0 * i - 1.0);
+    case Output::Cut: return i;
+    case Output::Flatten: return tanh(i);
     default:
 #define INVALID_MIXING_TYPE false
         assert(INVALID_MIXING_TYPE);
-        return 0.5;
+        return 0.0;
 #undef INVALID_MIXING_TYPE
     }
 }
@@ -445,7 +448,7 @@ const unsigned Noise::polys[2] = { 0x8255, 0xA801 };
 void Noise::ResetTick(ResetKind kind)
 {
     if(kind == ResetKind::REST) goal = -1;
-    else goal = (int)(999.0 * ivalue_);
+    else goal = (int)(999.0 * ((ivalue_ + 1.0) / 2.0));
 
     ++counter;
     if(counter >= goal) {
@@ -465,15 +468,15 @@ void Noise::ResetTick(ResetKind kind)
 
 double Noise::NextValue_(double)
 {
-    if(goal < 0) return 0.5;
+    if(goal < 0) return 0.0;
 
     switch(type_) {
-    case EIGHT: return (double)regs[0] / 0xFFFF;
-    case SIXTEEN: return (double)regs[1] / 0xFFFF;
+    case EIGHT: return ((double)regs[0] / 0xFFFF - 0.5) * 2.0;
+    case SIXTEEN: return ((double)regs[1] / 0xFFFF - 0.5) * 2.0;
     default:
 #define INVALID_NOISE_TYPE false
         assert(INVALID_NOISE_TYPE);
-        return 0.5;
+        return 0.0;
 #undef INVALID_NOISE_TYPE
     }
 }
@@ -495,6 +498,6 @@ double Delay::NextValue_(double x)
         buffer_.pop_back();
         return ret;
     } else {
-        return 0.5;
+        return 0.0;
     }
 }
