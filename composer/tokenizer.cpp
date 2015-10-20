@@ -112,7 +112,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
 
         LOG("Considering %c", c);
 
-        if(c == '#') {
+        if(c == ';') {
             LOG("Skipping comment until EOL");
             (void) fin.get();
             while(wc = fin.get(), wc != 10 && wc != 13 && wc != EOF)
@@ -205,7 +205,7 @@ bool GetNextToken(std::istream& fin, int& hTokenId, char*& sToken)
     }
 
     if(std::all_of(&stext[0], &stext[0] + stext.size(), [](char c) -> bool {
-                    return c >= '0' && c <= '9';
+                    return (c >= '0' && c <= '9') || c == '-';
                 })) {
         LOG("NUMBER");
         AssignString(text.str(), sToken);

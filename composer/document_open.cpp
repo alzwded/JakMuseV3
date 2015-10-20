@@ -142,14 +142,15 @@ static void AssignParam(Staff& s, std::string const& key, PpValue value)
                     if(idx % 2 == 0) {
                         n.scale_ = v.num;
                     } else {
-                        if(v.num > 999) {
-                            fprintf(stderr, "For staff %s, param %s, even numbered samples must be 0..999 (at index=%d)\n", s.name_.c_str(), key.c_str(), idx);
+                        if(v.num > 999 || v.num < -999) {
+                            fprintf(stderr, "For staff %s, param %s, even numbered samples must be -999..999 (at index=%d)\n", s.name_.c_str(), key.c_str(), idx);
                             return;
                         } else {
                             char tnum[4];
                             tnum[3] = '\0';
-                            sprintf(tnum, "%03u", v.num);
-                            n.name_ = tnum[0];
+                            sprintf(tnum, "%03u", abs(v.num));
+                            if(v.num >= 0) n.name_ = tnum[0];
+                            else n.name_ = tnum[0] - '0' + 'A';
                             n.height_ = tnum[1];
                             n.sharp_ = tnum[2];
                             s.notes_.push_back(n);

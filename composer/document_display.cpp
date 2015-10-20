@@ -162,13 +162,20 @@ void NoteCell::UserInput(std::string text)
         std::string s1, s2;
         s >> s1 >> s2;
         if(s1.empty() || s2.empty()) return;
+
         int scale = atoi(s1.c_str());
-        while(s2.size() < 3) s2 = '0' + s2;
-        if(atoi(s2.c_str()) > 999) return;
+        int goodNum = atoi(s2.c_str());
+        if(abs(goodNum) > 999) return;
+
+        char snum[4];
+        sprintf(snum, "%03u", abs(goodNum));
+        snum[3] = '\0';
+        if(goodNum >= 0) c.name_ = snum[0];
+        else c.name_ = snum[0] - '0' + 'A';
+
+        c.height_ = snum[1];
+        c.sharp_ = snum[2];
         c.scale_ = scale;
-        c.name_ = s2[0];
-        c.height_ = s2[1];
-        c.sharp_ = s2[2];
     }
 
     doc_.UpdateCache();

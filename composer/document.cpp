@@ -742,8 +742,13 @@ std::string Note::BuildString(char type)
         if(n.name_ != '-') ss << n.height_;
     } else if(type == 'P') {
         int scale = n.scale_;
-        int samp = (n.name_ - '0') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
-        ss << scale << " " << samp;
+        if(n.name_ >= '0' && n.name_ <= '9') {
+            int samp = (n.name_ - '0') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
+            ss << scale << " " << samp;
+        } else {
+            int samp = (n.name_ - 'A') * 100 + (n.height_ - '0') * 10 + (n.sharp_ - '0');
+            ss << scale << " " << (-samp);
+        }
     }
     return ss.str();
 }
