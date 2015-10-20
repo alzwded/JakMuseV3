@@ -129,26 +129,33 @@ enum class ResetKind {
 struct ABlock
 {
     virtual ~ABlock() {}
+    typedef std::tuple<bool, ResetKind> reset_t;
 
     std::list<std::shared_ptr<ABlock>>& Inputs() { return inputs_; }
     double Value() { return ovalue_; }
+    std::shared_ptr<ABlock> ResetBy;
+    virtual reset_t Reset() { return reset_; }
 
     void Tick1() // output[-1] buffer -> input buffer
     {
         ivalue_ = Input();
     }
 
-    virtual void Tick2() {} // for inputs generating ResetTick
-
-    virtual void ResetTick(ResetKind) =0; // reset bus -> internal
+    // for inputs generating ResetTick
+    virtual void Tick2() {
+        if(ResetBy) reset_ = ResetBy->reset_;
+    }
 
     void Tick3() // internal -> output buffer
     {
+        if(std::get<0>(reset_)) ResetTick(std::get<1>(reset_));
         ovalue_ = NextValue_(ivalue_);
     }
 
 protected:
     virtual double NextValue_(double) =0; // input buffer -> internal
+    virtual void ResetTick(ResetKind) =0; // reset bus -> internal
+
 
 protected:
     double Input()
@@ -165,7 +172,10 @@ protected:
 
 protected:
     std::list<std::shared_ptr<ABlock>> inputs_;
-    double ivalue_ = 0.0, ovalue_ = 0.0;
+    double ivalue_ = 0.0;
+    double ovalue_ = 0.0;
+public:
+    reset_t reset_ = reset_t(false, ResetKind::REST);
 };
 
 struct Constant
@@ -226,6 +236,7 @@ struct Generator
 {
     WaveTable WT;
     std::shared_ptr<ABlock> TGlide;
+    bool GlideOnRest = false;
 
     void ResetTick(ResetKind) override;
 
@@ -236,7 +247,7 @@ private:
     double F = 0.0;
     int NGlide = 0;
     PhaseAccumulator PA;
-    bool shutUp = false;
+    bool shutUp = true;
 };
 
 struct Input
@@ -250,7 +261,7 @@ struct Input
     //      (gets rid of lookahead or potential delays)
     //      TO BE CONSIDERED
     TypeStream<value_type> stream_;
-    std::vector<std::shared_ptr<ABlock>> resetBus_;
+    enum { RetainValue, Zero } OnRest = Zero;
 
     void Tick2() override;
 
@@ -271,11 +282,13 @@ struct Delay
     void ResetTick(ResetKind) override;
     size_t delay_ = 0;
 
+    void Tick2() override;
+
 protected:
     double NextValue_(double x) override;
 
 private:
-    std::deque<double> buffer_;
+    std::deque<std::tuple<double, bool, ResetKind>> buffer_;
 };
 
 struct Noise

@@ -20,29 +20,29 @@ SECTION INSTANCES
 
     Melody Generator {
         IN = [ DelayI1, VibrI1 ],
+        RST = DelayI1
         WT = [ 0, 1, 0, -1, 0 ],
         Interpolation = Cosine,
-        Glide = 8000
+        Glide = 4000
+        GlideOnRest = 0 ; try changing this to 1
     }
 
     DelayI1 Delay {
-        IN = [ I2 ],
+        IN = [ I1 ],
+        RST = I1
         Amount = 0
     }
 
     OFilter Filter {
         IN = [ Melody ],
+        RST = Melody
         A = 500, D = 0, S = 999, R = 400, ResetADSR = 0, InvertADSR = 0,
         Mixing = Cut,
         Low = 22050, High = 0, K = 500
     }
 
     I1 Input {
-        RST = [OFilter]
-    }
-
-    I2 Input {
-        RST = [Melody]
+        OnRest = RetainValue ; try changing this to Zero
     }
 
     VibrI1 Filter {
@@ -54,7 +54,7 @@ SECTION INSTANCES
     }
 
     ScaleVibrI1 Filter {
-        IN = I2
+        IN = I1
         K = 45
         Mixing = Cut,
         Low = 22050, High = 0,
@@ -73,9 +73,5 @@ SECTION NOTES
     I1 NOTES {
         Divisor = 2,
         Notes = [ 1A4 1B4 1C#5 1E5 2A5 1- 2A4 1- ]
-    }
-    I2 NOTES {
-        Divisor = 2,
-        Notes = [ 1A4 1B4 1C#5 1E5 2A5 1A5 2A4 1A4 ]
     }
 END SECTION

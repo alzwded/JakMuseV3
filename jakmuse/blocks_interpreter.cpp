@@ -102,6 +102,32 @@ InstanceInterpreter<Generator>::AcceptParameter(
         default:
             throw std::invalid_argument("WT: value: Expecing a LIST of NUMBERs");
         }
+    } else if(paramName.compare("GlideOnRest") == 0) {
+        switch(value.type) {
+        case PpValue::PpNUMBER:
+            if(value.num == 0 || value.num == 1) {
+                thing_->GlideOnRest = (value.num != 0);
+                return nullptr;
+            } else {
+                /*FALLTHROUGH*/
+            }
+        default:
+            throw std::invalid_argument("WT: GlideOnRest: expecting 0 or 1");
+        }
+    } else if(paramName.compare("RST") == 0) {
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string s;
+                s.assign(value.str);
+                auto thing = thing_;
+                return [thing, s](LookupMap_t const& map) {
+                    thing->ResetBy = map.at(s);
+                };
+            }
+        default:
+            throw std::invalid_argument("WT: RST: expecting a block name");
+        }
     } else if(paramName.compare("Interpolation") == 0) {
         switch(value.type) {
         case PpValue::PpSTRING:
@@ -281,6 +307,20 @@ InstanceInterpreter<Filter>::AcceptParameter(std::string paramName, PpValue valu
         NUMBER_OR_INPUT(Hi, 22050.0);
     } else if(paramName.compare("K") == 0) {
         NUMBER_OR_INPUT(K, 999.0);
+    } else if(paramName.compare("RST") == 0) {
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string s;
+                s.assign(value.str);
+                auto thing = thing_;
+                return [thing, s](LookupMap_t const& map) {
+                    thing->ResetBy = map.at(s);
+                };
+            }
+        default:
+            throw std::invalid_argument("WT: RST: expecting a block name");
+        }
     } else if(paramName.compare("IN") == 0) {
         // TODO this bit of code is common for everyone
         //      refactor into template<enum> ?
@@ -342,49 +382,28 @@ template<>
 DelayedLookup_fn
 InstanceInterpreter<Input>::AcceptParameter(std::string paramName, PpValue value)
 {
-    if(paramName.compare("RST") == 0) {
+    if(paramName.compare("OnRest") == 0) {
         switch(value.type)
         {
         case PpValue::PpSTRING:
             {
-                thing_->resetBus_.clear();
-                std::string name;
-                name.assign(value.str);
-                std::shared_ptr<thing_t> thing = thing_;
-                return [thing, name](LookupMap_t const& map) {
-                    thing->resetBus_.push_back(map.at(name));
-                };
-            }
-        case PpValue::PpLIST:
-            {
-                std::vector<std::string> names;
-                for(PpValueList* p = value.list; p; p = p->next)
-                {
-                    PpValue v = p->value;
-                    switch(v.type) {
-                    case PpValue::PpSTRING:
-                        {
-                            std::string s;
-                            s.assign(v.str);
-                            names.push_back(s);
-                        }
-                        break;
-                    default:
-                        throw std::invalid_argument("Input: RST: expecting LIST of STRINGs or STRING");
-                    }
+                std::string s;
+                s.assign(value.str);
+                if(s.compare("RetainValue") == 0) {
+                    thing_->OnRest = Input::RetainValue;
+                    return nullptr;
+                } else if(s.compare("Zero") == 0) {
+                    thing_->OnRest = Input::Zero;
+                    return nullptr;
+                } else{
+                    /*FALLTHROUGH*/
                 }
-                decltype(thing_) thing = thing_;
-                return [thing, names](LookupMap_t const& map) {
-                    for(auto&& s : names) {
-                        thing->resetBus_.push_back(map.at(s));
-                    }
-                };
             }
         default:
-            throw std::invalid_argument("Input: RST: expecting LIST of STRINGs or STRING");
+            throw std::invalid_argument("Input: OnRest: expecting RetainValue or Zero");
         }
     }
-    throw std::invalid_argument("Input: paramName: expecing RST");
+    throw std::invalid_argument("Input: paramName: expecing OnRest");
 }
 
 template<>
@@ -399,6 +418,20 @@ InstanceInterpreter<Delay>::AcceptParameter(std::string paramName, PpValue value
             return nullptr;
         default:
             throw std::invalid_argument("Delay: Amount: expecting a NUMBER");
+        }
+    } else if(paramName.compare("RST") == 0) {
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string s;
+                s.assign(value.str);
+                auto thing = thing_;
+                return [thing, s](LookupMap_t const& map) {
+                    thing->ResetBy = map.at(s);
+                };
+            }
+        default:
+            throw std::invalid_argument("WT: RST: expecting a block name");
         }
     } else if(paramName.compare("IN") == 0) {
         switch(value.type) {
@@ -466,6 +499,20 @@ InstanceInterpreter<Noise>::AcceptParameter(std::string paramName, PpValue value
             break;
         default:
             throw std::invalid_argument("Noise: Type: expecting a NUMBER");
+        }
+    } else if(paramName.compare("RST") == 0) {
+        switch(value.type) {
+        case PpValue::PpSTRING:
+            {
+                std::string s;
+                s.assign(value.str);
+                auto thing = thing_;
+                return [thing, s](LookupMap_t const& map) {
+                    thing->ResetBy = map.at(s);
+                };
+            }
+        default:
+            throw std::invalid_argument("WT: RST: expecting a block name");
         }
     } else if(paramName.compare("IN") == 0) {
         // TODO this bit of code is common for everyone

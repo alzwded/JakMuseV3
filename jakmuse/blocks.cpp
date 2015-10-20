@@ -294,12 +294,25 @@ void Generator::ResetTick(ResetKind kind)
     {
     case ResetKind::NOTE:
         assert(TGlide);
-        NGlide = (int)(TGlide->Value() * 2550.0);
-        shutUp = false;
+        if(!GlideOnRest && !shutUp) {
+            NGlide = (int)(TGlide->Value() * 2550.0);
+            shutUp = false;
+        } else if(!GlideOnRest && shutUp) {
+            NGlide = 0;
+            shutUp = false;
+        } else if(GlideOnRest) {
+            NGlide = (int)(TGlide->Value() * 2550.0);
+            shutUp = false;
+        }
         break;
     case ResetKind::REST:
-        NGlide = 0;
-        //shutUp = true; // FIXME release ain't working 'cause the Input controlling the amplitude of the vibrato gets disabled
+        if(GlideOnRest) {
+            NGlide = (int)(TGlide->Value() * 2550.0);
+            shutUp = false;
+        } else {
+            NGlide = 0;
+            shutUp = true;
+        }
         break;
     }
 }
@@ -308,10 +321,10 @@ double Generator::NextValue_(double in)
 {
     LOGF(LOG_BLOCKS, "in = %f", in);
     double newF = 22050.0 * in;
-    if(NGlide && newF > 1.0e-7) {
+    if(!shutUp && NGlide) {
         F = F + (newF - F) / NGlide;
         --NGlide;
-    } else if(newF > 1.0e-7 || shutUp) {
+    } else if(shutUp || !NGlide) {
         F = newF;
     }
     PA.Tick(F);
@@ -339,12 +352,16 @@ void Input::Tick2()
             kind = ResetKind::REST;
         } else {
             objective = std::get<0>(newValue);
-            value = std::get<1>(newValue);
+            if(OnRest == Input::RetainValue
+                    && fabs(std::get<1>(newValue)) < 1.0e-7)
+            {
+                value = value;
+            } else {
+                value = std::get<1>(newValue);
+            }
             kind = std::get<2>(newValue);
         }
-        for(auto&& b : resetBus_) {
-            b->ResetTick(kind);
-        }
+        reset_ = std::make_tuple(true, kind);
     } else {
         ++step;
     }
@@ -485,18 +502,31 @@ double Noise::NextValue_(double)
 // Delay
 // ===========================================================
 
+void Delay::Tick2()
+{
+    if(ResetBy) {
+        auto l = std::make_tuple(0.0, std::get<0>(ResetBy->reset_), std::get<1>(ResetBy->reset_));
+        buffer_.push_front(l);
+    } else {
+        auto l = std::make_tuple(0.0, false, ResetKind::REST);
+        buffer_.push_front(l);
+    }
+    auto last = buffer_.back();
+    reset_ = std::make_tuple(std::get<1>(last), std::get<2>(last));
+}
+
 void Delay::ResetTick(ResetKind kind)
 {
-    buffer_.clear();
 }
 
 double Delay::NextValue_(double x)
 {
-    buffer_.push_front(x);
+    auto f = buffer_.front();
+    buffer_.front() = std::make_tuple(x, std::get<1>(f), std::get<2>(f));
     if(buffer_.size() >= delay_) {
         auto ret = buffer_.back();
         buffer_.pop_back();
-        return ret;
+        return std::get<0>(ret);
     } else {
         return 0.0;
     }
