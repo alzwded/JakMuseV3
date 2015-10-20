@@ -1,17 +1,3 @@
-; while updating this file, I've noticed a number of defects:
-; 1. RELEASE cannot effin work unless you beat around the bush
-;    there needs to be some other way to keep the generators limping along
-;    with the previously good frequency while R is happening
-; 2. Input's triggering RST is stupid, because while I/O happens synchronously
-;    on each clock cycle, RST magically signals a new note was triggered
-;    before the note actually gets there; RST should be kinda sort of implicit
-;    this means rework the Tick* family of functions as well as the I/O
-;    functions to pass the reset information along
-;    Anyway, bottom line is I gots to gets rids of keeping two Input's around just to support release;
-;    The question arises: is R? = max(inputs) or R? = min(inputs) or R? = max(certain inputs) or R? = only_one_certain_input
-; 3. time-related constants should be reworked into something predictable
-; 4. WT only accepts 0, 1 and -1; lol
-
 SECTION INSTANCES
     OUTPUT {
         IN = [ OFilter ],
