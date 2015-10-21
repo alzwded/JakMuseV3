@@ -1055,3 +1055,15 @@ generator: if ResetFrom->Reset() == rest, then NGlide = 0, keep reading frequenc
     if input is OnRest==RetainValue, then the frequency will be kept
     if ResetFrom->Reset() == note, and coming out of rest, then don't glide; or glide? this could be a parameter
 
+==============================================================
+Still TODO
+==============================================================
+
+Integrate Delay::Amount as an input-able parameter; maybe using the same scale as Generator::Glide (250us) or use 45.33us as a base (~= 2 ticks)
+
+Even better idea for the delay unit:
+    Amount: nb of ticks 0...999
+    Multiplier: default 1; 1..999
+    Actual delay amount: Multiplier * Amount
+
+    If actual amount changes, resample samples to new buffer size (linear mapping)
