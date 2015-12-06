@@ -42,7 +42,7 @@ Document::Document()
         staves_.back().scale_ = 48;
         staves_.back().interpolation_ = 'T';
     }
-    title_ = "My new song";
+    title_ = "Untitled";
     active_.x = 13 * N;
     active_.y = 1;
     selected_ = marked_ = point_t(0, 0);
