@@ -290,8 +290,19 @@ private:
 struct Delay
 : public ABlock
 {
+#define Delay_SIZE (1024ul)
+    typedef std::tuple<double, bool, ResetKind> head_t;
+
+    Delay()
+        : head_(&buffer_[0])
+    {
+        for(size_t i = 0; i < Delay_SIZE; ++i) {
+            buffer_[i] = std::make_tuple(0.0, false, ResetKind::REST);
+        }
+    }
+
     void ResetTick(ResetKind) override;
-    size_t delay_ = 0;
+    std::shared_ptr<ABlock> delay_ = std::shared_ptr<ABlock>(new Constant);
 
     void Tick2() override;
 
@@ -299,7 +310,17 @@ protected:
     double NextValue_(double x) override;
 
 private:
-    std::deque<std::tuple<double, bool, ResetKind>> buffer_;
+    head_t buffer_[Delay_SIZE];
+    head_t* head_;
+
+private:
+    head_t& Read()
+    {
+        size_t delay = (size_t)(delay_->Value() * 999.0);
+        auto lastIdx = (((head_ - &buffer_[0]) + Delay_SIZE) - delay) % Delay_SIZE;
+        auto&& last = buffer_[lastIdx];
+        return last;
+    }
 };
 
 struct Noise

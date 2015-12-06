@@ -16,7 +16,6 @@ SECTION INSTANCES
     DelayI1 Delay {
         IN = [ I1 ],
         RST = I1
-        Amount = 0
     }
 
     OFilter Filter {

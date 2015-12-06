@@ -165,7 +165,7 @@ InstanceInterpreter<Generator>::AcceptParameter(
         case PpValue::PpNUMBER:
             {
                 std::shared_ptr<Constant> k(new Constant);
-                k->value_ = (double)value.num / 999; // FIXME
+                k->value_ = (double)value.num / 999.0; // FIXME
                 thing_->TGlide = std::dynamic_pointer_cast<ABlock>(k);
                 k->Tick3();
                 return nullptr;
@@ -412,13 +412,27 @@ InstanceInterpreter<Delay>::AcceptParameter(std::string paramName, PpValue value
 {
     if(paramName.compare("Amount") == 0) {
         switch(value.type) {
-        case PpValue::PpNUMBER:
-            if(//value.num > 999 ||
-                    value.num < 0) throw std::invalid_argument("Delay: Amount: should be between 0 and 999");
-            thing_->delay_ = value.num;
-            return nullptr;
+        case PpValue::PpNUMBER: 
+            {
+                if(//value.num > 999 ||
+                        value.num < 0) throw std::invalid_argument("Delay: Amount: should be between 0 and 999");
+                std::shared_ptr<Constant> k(new Constant);
+                k->value_ = (double)value.num / 999.0; // FIXME
+                k->Tick3();
+                thing_->delay_ = k;
+                return nullptr;
+            }
+        case PpValue::PpSTRING:
+            {
+                std::string name;
+                name.assign(value.str);
+                thing_sp thing = thing_;
+                return [thing, name](LookupMap_t const& map) {
+                    thing->delay_ = map.at(name);
+                }; 
+            }
         default:
-            throw std::invalid_argument("Delay: Amount: expecting a NUMBER");
+            throw std::invalid_argument("Delay: Amount: expecting a NUMBER or a STRING");
         }
     } else if(paramName.compare("RST") == 0) {
         switch(value.type) {

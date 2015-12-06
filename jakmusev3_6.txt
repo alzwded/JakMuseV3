@@ -590,7 +590,8 @@ Parameters
                             Behaviour on encountering rest; either retain the previous non-rest value or zero out
 
 :Delay:
-    Amount      Number of samples to delay the input; the actual amount is (Amount+1) (!)
+    Amount      0           Number of samples to delay the input; the actual
+                            amount is (Amount+1) (!) because of buffering
     [INPUT]     -
     [RESET]     -
 

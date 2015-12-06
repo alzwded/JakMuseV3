@@ -531,12 +531,20 @@ void Delay::Tick2()
 {
     if(ResetBy) {
         auto l = std::make_tuple(0.0, std::get<0>(ResetBy->reset_), std::get<1>(ResetBy->reset_));
-        buffer_.push_front(l);
+        ++head_;
+        if(head_ - &buffer_[0] >= Delay_SIZE) {
+            head_ = &buffer_[0];
+        }
+        *head_ = l;
     } else {
         auto l = std::make_tuple(0.0, false, ResetKind::REST);
-        buffer_.push_front(l);
+        ++head_;
+        if(head_ - &buffer_[0] >= Delay_SIZE) {
+            head_ = &buffer_[0];
+        }
+        *head_ = l;
     }
-    auto last = buffer_.back();
+    auto last = Read();
     reset_ = std::make_tuple(std::get<1>(last), std::get<2>(last));
 }
 
@@ -546,13 +554,7 @@ void Delay::ResetTick(ResetKind kind)
 
 double Delay::NextValue_(double x)
 {
-    auto f = buffer_.front();
-    buffer_.front() = std::make_tuple(x, std::get<1>(f), std::get<2>(f));
-    if(buffer_.size() >= delay_) {
-        auto ret = buffer_.back();
-        buffer_.pop_back();
-        return std::get<0>(ret);
-    } else {
-        return 0.0;
-    }
+    *head_ = std::make_tuple(x, std::get<1>(*head_), std::get<2>(*head_));
+    auto ret = Read();
+    return std::get<0>(ret);
 }

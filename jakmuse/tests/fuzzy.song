@@ -64,6 +64,7 @@ SECTION INSTANCES
     DI1 Delay {
         IN = [ I1 ]
         RST = I1
+        Amount = 1
     }
 
     I1 Input {
