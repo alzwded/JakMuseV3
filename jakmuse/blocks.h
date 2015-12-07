@@ -316,7 +316,8 @@ private:
 private:
     head_t& Read()
     {
-        size_t delay = (size_t)(delay_->Value() * 999.0);
+        auto v = fabs(delay_->Value());
+        size_t delay = (size_t)(v * 999.0);
         auto lastIdx = (((head_ - &buffer_[0]) + Delay_SIZE) - delay) % Delay_SIZE;
         auto&& last = buffer_[lastIdx];
         return last;

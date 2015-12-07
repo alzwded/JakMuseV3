@@ -70,7 +70,7 @@ InstanceInterpreter<Constant>::AcceptParameter(
     if(paramName.compare("Value") != 0) throw std::invalid_argument("paramName: Expecing Value");
     switch(value.type) {
     case PpValue::PpNUMBER:
-        thing_->value_ = value.num;
+        thing_->value_ = (double)value.num / 999.0;
         return nullptr;
     default:
         throw std::invalid_argument("value: Expecting a NUMBER");
