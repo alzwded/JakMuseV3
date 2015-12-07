@@ -1,0 +1,111 @@
+; a well executed flanging on something that sounds like a plucked string
+; although I was certain up to this point that that waveform was a violin's
+SECTION INSTANCES
+    OUTPUT {
+        IN = [ FOut ]
+        Mixing = Flatten
+    }
+
+    FOut Filter {
+        IN = [GLeadOut, DFlangingOut]
+        ;IN = [DFlangingOut]
+        K = 400
+    }
+
+    GLeadOut Filter {
+        IN = [FLeadPrimary]
+        K = 200
+    }
+
+    DFlangingOut Filter {
+        IN = [DFlanging]
+        K = 799
+    }
+
+    DFlanging Delay {
+        Amount = FGAmount
+        IN = FFeedback
+    }
+
+    FFeedback Filter {
+        IN = [FLeadScaled, FOutScaled]
+    }
+
+    FLeadScaled Filter {
+        IN = [FLeadPrimary]
+        K = 399
+    }
+
+    FOutScaled Filter {
+        IN = [FOut]
+        K = 600
+    }
+
+    FGAmount Filter {
+        IN = [KAmount, GAmount]
+    }
+
+    KAmount Constant {
+        Value = 30
+    }
+
+    GAmount Generator {
+        WT = [-30 0 30 0 -30]
+        Interpolation = Linear
+        IN = HACKS1 ; frequency < 1Hz
+    }
+
+    HACKS1 Filter {
+        IN = HACKS2
+        ;K = 20
+        ;K = 100 ; spacey
+        K = 24
+    }
+
+    HACKS2 Filter {
+        IN = 1 ; yeah, I don't know what frequency < 1 this is
+        K = 900
+    }
+
+    FLeadPrimary Filter {
+        IN = [GLead]
+        K = 999
+        A = 2
+        D = 4
+        S = 800
+        R = 14
+        ResetADSR = 1
+        RST = GLead
+    }
+
+    GLead Generator {
+        WT = [-999 -500 0 500 999 500 0 -500 -999 0 999 0 -999]
+        Interpolation = Cosine
+        IN = I1
+        RST = I1
+    }
+
+    I1 Input {
+        OnRest = RetainValue
+    }
+END SECTION
+SECTION NOTES
+    I1 NOTES {
+        Divisor = 4
+        Notes = [
+            1A2 1A3 1C3 1E3 1A3 1C3 1E3 1C3
+            1A2 1A3 1C3 1E3 1A3 1C3 1E3 1C3
+            1-  1-  1B2 1D2 1G3 1B2 1D2 1B2
+            1-  1-  1G#2 1B2 1E3 1G#2 1B2 1G#2
+            1-  1-  1A2 1C3 2A2     3F3 
+                1-  1-  1-
+            1A3 1A4 1C4 1E4 1A4 1C4 1E4 1C4
+            1A3 1A4 1C4 1E4 1A4 1C4 1E4 1C4
+            1-  1-  1B3 1D3 1G4 1B3 1D3 1B3
+            1-  1-  1G#3 1B3 1E3 1G#2 1B2 1G#2
+            1-  1-  1A2 1C3 2A2     3F3 
+                1-  1-  1-
+            16C3 3-
+        ]
+    }
+END SECTION
