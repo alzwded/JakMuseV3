@@ -329,7 +329,7 @@ static void handleSpecialRelease(int key, int x, int y)
             glutPostRedisplay();
         }
         break;
-    case GLUT_KEY_F10:
+    case GLUT_KEY_F9:
         doc.PopState();
         glutPostRedisplay();
         break;
